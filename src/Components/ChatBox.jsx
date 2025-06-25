@@ -40,20 +40,22 @@ function ChatBox(props) {
     <>
     <div className='fixed md:right-12 bottom-0 bg-gray-400 flex flex-col md:m-2 md:mx-5 shadow-lg h-[100svh] md:max-h-[450px] w-full md:max-w-[350px]  md:rounded-xl '>
       <div className='flex items-center p-2 gap-2'>
-        <button onClick={props.onExit}><ArrowLeft className='w-6 h-6 cursor-pointer'/></button>
+        <button onClick={props.onExit}>
+          <ArrowLeft className='w-6 h-6 cursor-pointer'/>
+        </button>
         <div className="relative">
           <div className="w-12 h-12 md:w-8 md:h-8 rounded-full bg-gray-300 flex items-center justify-center">
             <User className='w-6 h-6'/>
           </div>
-          <button onClick={() => setIsActive(active => !active)} className={`absolute right-0 bottom-0 w-4 md:w-3 h-4 md:h-3 rounded-full ${isActive ? 'bg-green-500' : 'bg-gray-400'} border-2 border-white`}></button>
+          <button onClick={() => setIsActive(active => !active)} className={`absolute right-0 bottom-0 w-4 md:w-3 h-4 md:h-3 rounded-full ${isActive ? 'bg-green-500' : 'bg-gray-400'} border-2 border-white`}/>
         </div>
         <h1 className='text-2xl md:text-lg font-bold w-full '>
           {props.title}Vendor
         </h1>
-        <div  className='flex gap-2 pr-1 cursor-pointer'>
-          <Phone className='w-7 h-7 md:w-5 md:h-5'/>
-          <Video className='w-7 h-7 md:w-5 md:h-5'/>
-          <Info className='w-7 h-7 md:w-5 md:h-5'/>
+        <div  className='flex gap-2 pr-1 items-center'>
+          <Phone className='w-7 h-7 md:w-5 md:h-5 cursor-pointer'/>
+          <Video className='w-7 h-7 md:w-5 md:h-5 cursor-pointer'/>
+          <Info className='w-7 h-7 md:w-5 md:h-5 cursor-pointer'/>
           <button onClick={props.onClose} className='cursor-pointer'>
             <X className='w-6 h-6'/>
           </button>
@@ -116,7 +118,7 @@ function ChatBox(props) {
       {optionVisible &&(
         <div className='flex flex-wrap gap-1 mx-1 p-2 justify-center bg-white'>
           {quickReplies.map((reply, idx) => (
-            <button key={idx} onClick={() => sendMessage(reply)} className='bg-blue-200 text-lg md:text-sm rounded-2xl px-2 p-1 hover:bg-blue-300'>
+            <button key={idx} onClick={() => sendMessage(reply)} className='bg-blue-200 text-lg md:text-sm rounded-2xl px-2 p-1 hover:bg-blue-300 cursor-pointer'>
               {reply}
             </button>
           ))}

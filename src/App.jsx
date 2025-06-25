@@ -16,12 +16,12 @@ function App() {
 
   return (
     <>
-    <div className='bg-blue-300 w-full h-dvh'>
+    <div className='bg-black w-full h-dvh'>
     {isOpen && 
       <ChatList  onClose={() => setIsOpen(false)}/>
     }
     { (!isSmallScreen || !isOpen) && (
-    <button onClick={() => setIsOpen(!isOpen)} className='fixed right-5 bottom-5 w-10 h-8 rounded-full bg-gray-600 text-white flex justify-center items-center'>
+    <button onClick={() => setIsOpen(!isOpen)} className='fixed right-5 bottom-2 w-10 h-8 rounded-full bg-gray-500 text-white flex justify-center items-center cursor-pointer'>
       <MessageCircle/>
     </button>
     )}
