@@ -53,9 +53,9 @@ function ChatBox(props) {
           {props.title}Vendor
         </h1>
         <div  className='flex gap-2 pr-1 items-center'>
-          <Phone className='w-7 h-7 md:w-5 md:h-5 cursor-pointer'/>
+          {/* <Phone className='w-7 h-7 md:w-5 md:h-5 cursor-pointer'/>
           <Video className='w-7 h-7 md:w-5 md:h-5 cursor-pointer'/>
-          <Info className='w-7 h-7 md:w-5 md:h-5 cursor-pointer'/>
+          <Info className='w-7 h-7 md:w-5 md:h-5 cursor-pointer'/> */}
           <button onClick={props.onClose} className='cursor-pointer'>
             <X className='w-6 h-6'/>
           </button>
