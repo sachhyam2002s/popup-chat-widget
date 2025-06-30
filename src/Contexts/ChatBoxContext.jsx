@@ -1,5 +1,5 @@
 import {useState, useEffect, useRef, createContext, useContext} from 'react'
-import replies from  '../../quickReplies.json'
+import replies from  '../../public/quickReplies.json'
 
 const ChatBoxContext = createContext(null)
 
