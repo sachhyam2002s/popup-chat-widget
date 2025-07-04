@@ -21,7 +21,7 @@ function ChatList(props) {
   console.log(names)
   
   const searchedName = names.filter(name =>
-    name.includes(searchResult)
+    name.toLowerCase().includes(searchResult.toLowerCase())
   )
 
   return (
