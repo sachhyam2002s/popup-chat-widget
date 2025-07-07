@@ -25,16 +25,16 @@ function User(props) {
   }
   
   return (
-    <div onClick={props.onClick} className='flex p-2 md:p-1 gap-2 items-center bg-blue-50 rounded-lg cursor-pointer'>
+    <div onClick={props.onClick} className='flex p-2 md:p-1 gap-2 rounded-lg items-center bg-blue-50 cursor-pointer'>
         <div className='relative'>
-            <div className='flex bg-gray-500 text-white rounded-full w-12 h-12 md:w-8 md:h-8 items-center justify-center '>
+            <div className='flex bg-gray-500 text-white rounded-full w-12 h-12 md:w-10 md:h-10 items-center justify-center '>
                 <User2 className='w-5 h-5'/>
             </div>
           <button onClick={(e) => {e.stopPropagation(); setIsActive(prev => !prev)}} className={`absolute bottom-0 right-0 w-4 h-4 md:w-3 md:h-3 rounded-full ${isActive ? 'bg-green-400' : 'bg-gray-300'} border-2 border-gray-700`}></button>
         </div>
         <div className='flex w-full relative items-center'>
           <div className='w-[80%]'>
-            <p className={`text-md font-semibold ${isUnseenMsg ? 'text-blue-300': 'text-black'}`}>{props.username}</p>
+            <p className={`text-md font-semibold ${isUnseenMsg ? 'text-blue-500': 'text-black'}`}>{props.username}</p>
             <p className={`text-xs`}>
               {isActive ? 'Online' : 'Offline'}
             </p>

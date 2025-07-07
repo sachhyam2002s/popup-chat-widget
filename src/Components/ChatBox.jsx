@@ -11,7 +11,6 @@ function ChatBox(props) {
     toggleMenu,
     isActive,
     scrollRef,
-    time,
     date, 
     day,
     isTyping,
@@ -53,9 +52,6 @@ function ChatBox(props) {
           {props.title}Vendor
         </h1>
         <div  className='flex gap-2 pr-1 items-center'>
-          {/* <Phone className='w-7 h-7 md:w-5 md:h-5 cursor-pointer'/>
-          <Video className='w-7 h-7 md:w-5 md:h-5 cursor-pointer'/>
-          <Info className='w-7 h-7 md:w-5 md:h-5 cursor-pointer'/> */}
           <button onClick={props.onClose} className='cursor-pointer'>
             <X className='w-6 h-6'/>
           </button>
@@ -64,48 +60,67 @@ function ChatBox(props) {
 
       <div ref={scrollRef} className='p-1 bg-white h-full flex flex-col gap-1 overflow-y-auto scrollbar-hide mx-1'>
         <span className='text-xs text-center'>
-          {time}, {date}, {day}
+          {date}, {day}
         </span>
-        {message.map((msg, i) => (
-          <div key={i} className={`flex ${msg.sender === 'client' ? 'justify-end' : 'justify-start'} items-end gap-1`}>
-            {msg.sender === 'vendor' && (
-              <div className='bg-gray-300 rounded-full flex justify-center items-center w-4 h-4'>
-                <User className='w-3 h-3'/>
-              </div>
-            )}
-            {/* <div className='flex flex-wrap gap-1'> */}
-            {msg.text && (
-              <div className={`rounded-2xl px-2 py-1 text-lg md:text-sm max-w-[80%] break-words whitespace-pre-wrap mb-1 ${msg.sender === 'client' ? 'bg-blue-300' : 'bg-gray-300'}`}>
-                {msg.text}
-              </div>
-            )}
+        {message.map((msg, i) => {
+          const showTime = i === 1 ||
+          (i>1 &&
+            msg.timeStamp &&
+            message[i-1]?.timeStamp &&
+            msg.timeStamp - message[i-1].timeStamp >= 5000
+          )
+          return(
             <div>
-              {Array.isArray(msg.media) && msg.media.map((media, idx) => (
-                media.type === 'image' ? (
-                <img key={idx} src={media.url} alt="image" className='max-w-90 md:max-w-60 max-h-90 rounded-lg mb-1'/>
-              ) : (
-                <video key={idx} src={media.url} alt='video' className='max-w-90 md:max-w-60 max-h-90 rounded-lg mb-1'/>
-              )
-              ))}
-              {Array.isArray(msg.file) && (
-                <div className='flex items-end flex-col gap-1 '>
-                  {msg.file.map((file, idx) => (
-                    <div key={idx} className='flex items-center gap-1 bg-gray-300 rounded-lg px-2 py-1'>
-                      <File className='w-6 h-6 stroke-1 text-gray-700'/>
-                      <a href={file.url} download={file.name} className='text-xs break-all underline hover:text-blue-500'>
-                        {file.name}
-                      </a>
-                    </div>
-                  ))}
+            <div key={i} className={`flex ${msg.sender === 'client' ? 'justify-end' : 'justify-start'} items-end gap-1`}>
+              {msg.sender === 'vendor' && (
+                <div className='bg-gray-300 rounded-full flex justify-center items-center w-4 h-4'>
+                  <User className='w-3 h-3'/>
+                </div>
+              )}
+              {msg.text && (
+                <div className='flex flex-col items-end max-w-[80%]'>
+                  <div className={`rounded-2xl px-2 py-1 text-lg md:text-sm  break-words whitespace-pre-wrap mb-1 ${msg.sender === 'client' ? 'bg-blue-300' : 'bg-gray-300'}`}>
+                    {msg.text}
+                  </div>
+                  
+                </div>
+              )}
+              <div>
+                {Array.isArray(msg.media) && msg.media.map((media, idx) => (
+                  media.type === 'image' ? (
+                  <img key={idx} src={media.url} alt="image" className='max-w-90 md:max-w-60 max-h-90 rounded-lg mb-1'/>
+                ) : (
+                  <video key={idx} src={media.url} alt='video' className='max-w-90 md:max-w-60 max-h-90 rounded-lg mb-1'/>
+                )
+                ))}
+                {Array.isArray(msg.file) && (
+                  <div className='flex items-end flex-col gap-1 '>
+                    {msg.file.map((file, idx) => (
+                      <div key={idx} className='flex items-center gap-1 bg-gray-300 rounded-lg px-2 py-1'>
+                        <File className='w-6 h-6 stroke-1 text-gray-700'/>
+                        <a href={file.url} download={file.name} className='text-xs break-all underline hover:text-blue-500'>
+                          {file.name}
+                        </a>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+              {msg.sender === 'client' &&(
+                <div className='bg-gray-300 rounded-full flex justify-center items-center w-4 h-4'>
+                  <User className='w-3 h-3'/>
                 </div>
               )}
             </div>
-            {/* </div> */}
-            {msg.sender === 'client' &&(
-              <div className='bg-gray-300 rounded-full flex justify-center items-center w-4 h-4'><User className='w-3 h-3'/></div>
+            {showTime && msg.timeStamp && (
+              <div className={`text-xs text-gray-500 mx-5 ${msg.sender === 'client'? 'text-end':'text-start'}`}>
+                {new Date(msg.timeStamp).toLocaleTimeString([], {hour:'2-digit', minute: '2-digit'})}
+              </div>
             )}
-          </div>
-        ))}
+            
+            </div>
+          )
+        })}
       </div>
 
       {isTyping && (
