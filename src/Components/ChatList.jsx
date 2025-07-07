@@ -56,14 +56,10 @@ function ChatList(props) {
             <ChatBox onExit={() => setisChatBoxOpen(false)} onClose={props.onClose}/>
           </ChatBoxContextProvider>
         ) : (
-          <div ref={scrollRef} className='flex flex-col gap-1 h-full m-2 rounded overflow-y-scroll scrollbar-hide'>
-            {/* {searchedName.map((name, id) => (
-              <div> */}
-                {searchedName.map((name, id) => (
-              <User onClick={() => setisChatBoxOpen(true)} username={name}/>
+          <div ref={scrollRef} className='flex flex-col h-full m-2 gap-1 overflow-y-scroll scrollbar-hide'>
+            {searchedName.map((name, id) => (
+              <User key={id} onClick={() => setisChatBoxOpen(true)} username={name}/>
             ))}
-              {/* </div>
-            ))} */}
           </div>
         )}
       </>

@@ -98,7 +98,7 @@ function ChatBot(props) {
 
   return (
     <>
-      <div className='fixed inset-0 md:inset-auto md:right-12 md:bottom-0 bg-gray-400 flex flex-col md:m-2 md:mx-5 shadow-lg h-screen md:max-h-[450px] w-full md:max-w-[350px]  md:rounded-xl z-50'>
+      <div className='fixed inset-0 md:inset-auto md:right-12 md:bottom-0 bg-gray-400 flex flex-col md:m-2 md:mx-5 shadow-lg h-[100svh] md:max-h-[450px] w-full md:max-w-[350px]  md:rounded-xl z-50'>
         <div className='flex items-center p-2 gap-2'>
           <button onClick={props.onExit}>
             <ArrowLeft className='w-6 h-6 cursor-pointer'/>

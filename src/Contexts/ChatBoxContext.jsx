@@ -16,6 +16,7 @@ export const ChatBoxContextProvider = ({children}) => {
   const [selectedFile, setSelectedFile] = useState([])
   const [previewFile, setPreviewFile] = useState([])
   const [isEmoji, setIsEmoji] = useState(false)
+  const [isSent, setIsSent] = useState(false)
 
   const scrollRef = useRef(null)
   const typingTimeoutRef = useRef(null)
@@ -28,15 +29,15 @@ export const ChatBoxContextProvider = ({children}) => {
     }, 60000)
     return () => clearInterval(interval)
   },[])
-  const time = currentTime.toLocaleTimeString([], {hour:'2-digit', minute: '2-digit'});
   const date = currentTime.toLocaleDateString([], {month:'short', day:'numeric', year:'numeric'})
   const day = currentTime.toLocaleDateString([], {weekday:'short'})
     
   useEffect(() => {
     if (message.length === 0) {
+      const now = Date.now()
       setMessage([
-        {text: 'Hello! Welcome.', sender:'vendor'},
-        {text: 'How can I help you?', sender:'vendor'}
+        {text: 'Hello! Welcome.', sender:'vendor', timeStamp: now},
+        {text: 'How can I help you?', sender:'vendor', timeStamp: now}
       ])
     }
   },[])
@@ -71,8 +72,10 @@ export const ChatBoxContextProvider = ({children}) => {
     const isMedia = selectedMedia  && selectedMedia.length>0;  
     const isFile = selectedFile && selectedFile.length > 0;
     if (!isText && !isMedia && !isFile) return;
+    const now = Date.now()
     const newMsg = {
-      sender: 'client'
+      sender: 'client',
+      timeStamp: now
     }
     if(isText){
       newMsg.text = customText
@@ -128,7 +131,7 @@ export const ChatBoxContextProvider = ({children}) => {
   }
 
   return (
-    <ChatBoxContext.Provider value = {{message, input, optionVisible, isActive, isTyping, showMenu, previewMedia, previewFile, selectedMedia, selectedFile, time, date, day, scrollRef, typingTimeoutRef, quickReplies, toggleMenu, handleMediaChange, handleFileChange, sendMessage, handleKey, handleInputChange, setPreviewMedia, setSelectedFile, setPreviewFile, setIsActive, isEmoji, setIsEmoji, onEmojiClick}}>
+    <ChatBoxContext.Provider value = {{message, input, optionVisible, isActive, isTyping, showMenu, previewMedia, previewFile, selectedMedia, selectedFile, date, day, scrollRef, typingTimeoutRef, quickReplies, toggleMenu, handleMediaChange, handleFileChange, sendMessage, handleKey, handleInputChange, setPreviewMedia, setSelectedFile, setPreviewFile, setIsActive, isEmoji, setIsEmoji, onEmojiClick}}>
         {children}
     </ChatBoxContext.Provider>
   )
