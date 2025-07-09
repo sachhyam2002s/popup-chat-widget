@@ -3,18 +3,18 @@ import {Search, X, Bot} from 'lucide-react'
 import ChatBox from '../Components/ChatBox'
 import ChatBot from '../Components/ChatBot'
 import {ChatBoxContextProvider} from '../Contexts/ChatBoxContext'
-import user from '../../public/users.json'
+import user from '../users.json'
 import User from '../Components/User'
 
 function ChatList(props) {
   const [isChatBoxOpen, setisChatBoxOpen] = useState(false)
   const [isAIOpen, setIsAIOpen] = useState(false)
   const [searchResult, setSearchResult] = useState('')
+  const [selectedUser, setSelectedUser] = useState('')
   const scrollRef = useRef(null)
 
   const handleSearch = (e) => {
     setSearchResult(e.target.value)
-    console.log(searchResult);
   }
   
   const names= JSON.parse(JSON.stringify(user.users))
@@ -53,12 +53,12 @@ function ChatList(props) {
 
         {isChatBoxOpen ? (
           <ChatBoxContextProvider>
-            <ChatBox onExit={() => setisChatBoxOpen(false)} onClose={props.onClose}/>
+            <ChatBox onExit={() => setisChatBoxOpen(false)} onClose={props.onClose} user={selectedUser}/>
           </ChatBoxContextProvider>
         ) : (
           <div ref={scrollRef} className='flex flex-col h-full m-2 gap-1 overflow-y-scroll scrollbar-hide'>
             {searchedName.map((name, id) => (
-              <User key={id} onClick={() => setisChatBoxOpen(true)} username={name}/>
+              <User key={id} onClick={() => {setisChatBoxOpen(true); setSelectedUser(name)}} username={name}/>
             ))}
           </div>
         )}

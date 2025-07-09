@@ -1,5 +1,6 @@
 import {useState, useEffect, useRef, createContext, useContext} from 'react'
-import replies from  '../../public/quickReplies.json'
+import replies from  '../quickReplies.json'
+import socket from '../socket'
 
 const ChatBoxContext = createContext(null)
 
@@ -16,7 +17,24 @@ export const ChatBoxContextProvider = ({children}) => {
   const [selectedFile, setSelectedFile] = useState([])
   const [previewFile, setPreviewFile] = useState([])
   const [isEmoji, setIsEmoji] = useState(false)
-  const [isSent, setIsSent] = useState(false)
+  // const [isSent, setIsSent] = useState(false)
+
+  socket.on('connect', () => {
+    console.log(`Connected with id: ${socket.id}`)
+  })
+  // socket.on('connect-error', () => {
+  //   console.error('connection error', err);
+  // })
+  useEffect(() => {
+    const handleReceivedMessage = (newMsg) => {
+      // console.log(newMsg);
+      setMessage(prev => [...prev, newMsg])
+    }
+    socket.on('receive-message', handleReceivedMessage)
+    return () => {
+      socket.off('receive-message', handleReceivedMessage)
+    }
+  }, [])
 
   const scrollRef = useRef(null)
   const typingTimeoutRef = useRef(null)
@@ -74,8 +92,8 @@ export const ChatBoxContextProvider = ({children}) => {
     if (!isText && !isMedia && !isFile) return;
     const now = Date.now()
     const newMsg = {
-      sender: 'client',
-      timeStamp: now
+      sender: socket.id,
+      timeStamp:now
     }
     if(isText){
       newMsg.text = customText
@@ -94,6 +112,12 @@ export const ChatBoxContextProvider = ({children}) => {
         name: selectedFile[i]?.name,
         type: selectedFile[i]?.type
       }))
+    }
+    if (socket.connected) {
+      // console.log('sending', newMsg);
+      socket.emit('send-message', newMsg)
+    }else{
+      console.warn('socket not connected');
     }
     setMessage(prev => [...prev, newMsg])
     //reset state
@@ -131,7 +155,7 @@ export const ChatBoxContextProvider = ({children}) => {
   }
 
   return (
-    <ChatBoxContext.Provider value = {{message, input, optionVisible, isActive, isTyping, showMenu, previewMedia, previewFile, selectedMedia, selectedFile, date, day, scrollRef, typingTimeoutRef, quickReplies, toggleMenu, handleMediaChange, handleFileChange, sendMessage, handleKey, handleInputChange, setPreviewMedia, setSelectedFile, setPreviewFile, setIsActive, isEmoji, setIsEmoji, onEmojiClick}}>
+    <ChatBoxContext.Provider value = {{message, input, optionVisible, isActive, isTyping, showMenu, previewMedia, previewFile, selectedMedia, selectedFile, date, day, scrollRef, typingTimeoutRef, quickReplies, toggleMenu, handleMediaChange, handleFileChange, sendMessage, handleKey, handleInputChange, setPreviewMedia, setSelectedFile, setPreviewFile, setIsActive, isEmoji, setIsEmoji, onEmojiClick, socket}}>
         {children}
     </ChatBoxContext.Provider>
   )

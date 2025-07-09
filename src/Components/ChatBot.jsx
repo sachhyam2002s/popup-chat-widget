@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react'
 import { SendHorizonal, User, ArrowLeft, Bot, X} from 'lucide-react'
-import botmessages from '../../public/botChat.json'
+import botmessages from '../botChat.json'
 
 function ChatBot(props) {
   const botChat = JSON.parse(JSON.stringify(botmessages))

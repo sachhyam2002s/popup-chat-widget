@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import {MessageCircle} from 'lucide-react'
 import ChatList from './Components/ChatList'
+// import socket from './socket'
 
 function App() {
   const[isOpen, setIsOpen] = useState(false)
@@ -13,6 +14,10 @@ function App() {
     window.addEventListener('resize', handleResize)
     return () => window.removeEventListener('resize', handleResize)
   },)  
+
+  // socket.on('connect', () => {
+  //   console.log(`Connected with id: ${socket.id}`)
+  // })
 
   return (
     <>

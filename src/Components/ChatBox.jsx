@@ -3,6 +3,7 @@ import {useChatBox} from '../Contexts/ChatBoxContext'
 import EmojiPicker from 'emoji-picker-react'
 
 
+
 function ChatBox(props) {
   const {
     message,
@@ -32,7 +33,8 @@ function ChatBox(props) {
     setSelectedFile,
     isEmoji,
     setIsEmoji,
-    onEmojiClick
+    onEmojiClick,
+    socket
   } = useChatBox();
 
   return (
@@ -49,7 +51,7 @@ function ChatBox(props) {
           <button onClick={() => setIsActive(active => !active)} className={`absolute right-0 bottom-0 w-4 md:w-3 h-4 md:h-3 rounded-full ${isActive ? 'bg-green-500' : 'bg-gray-400'} border-2 border-white`}/>
         </div>
         <h1 className='text-2xl md:text-lg font-bold w-full '>
-          {props.title}Vendor
+          {socket.id}
         </h1>
         <div  className='flex gap-2 pr-1 items-center'>
           <button onClick={props.onClose} className='cursor-pointer'>
@@ -67,19 +69,19 @@ function ChatBox(props) {
           (i>1 &&
             msg.timeStamp &&
             message[i-1]?.timeStamp &&
-            msg.timeStamp - message[i-1].timeStamp >= 5000
+            msg.timeStamp - message[i-1].timeStamp >= 120000  // (2min * 60sec * 1000 millisec)= 120000 milliseconds / 2 minutes 
           )
           return(
-            <div>
-            <div key={i} className={`flex ${msg.sender === 'client' ? 'justify-end' : 'justify-start'} items-end gap-1`}>
-              {msg.sender === 'vendor' && (
+            <div key={i}>
+            <div className={`flex ${msg.sender === socket.id ? 'justify-end' : 'justify-start'} items-end gap-1`}>
+              {msg.sender !== socket.id && (
                 <div className='bg-gray-300 rounded-full flex justify-center items-center w-4 h-4'>
                   <User className='w-3 h-3'/>
                 </div>
               )}
               {msg.text && (
                 <div className='flex flex-col items-end max-w-[80%]'>
-                  <div className={`rounded-2xl px-2 py-1 text-lg md:text-sm  break-words whitespace-pre-wrap mb-1 ${msg.sender === 'client' ? 'bg-blue-300' : 'bg-gray-300'}`}>
+                  <div className={`rounded-2xl px-2 py-1 text-lg md:text-sm  break-words whitespace-pre-wrap mb-1 ${msg.sender === socket.id ? 'bg-blue-300' : 'bg-gray-300'}`}>
                     {msg.text}
                   </div>
                   
@@ -88,15 +90,15 @@ function ChatBox(props) {
               <div>
                 {Array.isArray(msg.media) && msg.media.map((media, idx) => (
                   media.type === 'image' ? (
-                  <img key={idx} src={media.url} alt="image" className='max-w-90 md:max-w-60 max-h-90 rounded-lg mb-1'/>
+                  <img key={idx} src={media.url} alt="image" className={`max-w-90 md:max-w-60 max-h-90 rounded-lg mb-1 ${msg.sender === socket.id ? 'items-end' : 'items-start'}`}/>
                 ) : (
                   <video key={idx} src={media.url} alt='video' className='max-w-90 md:max-w-60 max-h-90 rounded-lg mb-1'/>
                 )
                 ))}
                 {Array.isArray(msg.file) && (
-                  <div className='flex items-end flex-col gap-1 '>
+                  <div className={`flex flex-col gap-1 ${msg.sender === socket.id ? 'items-end' : 'items-start'}`}>
                     {msg.file.map((file, idx) => (
-                      <div key={idx} className='flex items-center gap-1 bg-gray-300 rounded-lg px-2 py-1'>
+                      <div key={idx} className={`flex items-center gap-1 rounded-lg px-2 py-1 ${msg.sender === socket.id ? 'bg-blue-300' : 'bg-gray-300'}`}>
                         <File className='w-6 h-6 stroke-1 text-gray-700'/>
                         <a href={file.url} download={file.name} className='text-xs break-all underline hover:text-blue-500'>
                           {file.name}
@@ -106,14 +108,14 @@ function ChatBox(props) {
                   </div>
                 )}
               </div>
-              {msg.sender === 'client' &&(
+              {msg.sender === socket.id &&(
                 <div className='bg-gray-300 rounded-full flex justify-center items-center w-4 h-4'>
                   <User className='w-3 h-3'/>
                 </div>
               )}
             </div>
             {showTime && msg.timeStamp && (
-              <div className={`text-xs text-gray-500 mx-5 ${msg.sender === 'client'? 'text-end':'text-start'}`}>
+              <div className={`text-xs text-gray-500 mx-5 ${msg.sender === socket.id ? 'text-end':'text-start'}`}>
                 {new Date(msg.timeStamp).toLocaleTimeString([], {hour:'2-digit', minute: '2-digit'})}
               </div>
             )}
