@@ -33,15 +33,11 @@ function User(props) {
           <button onClick={(e) => {e.stopPropagation(); setIsActive(prev => !prev)}} className={`absolute bottom-0 right-0 w-4 h-4 md:w-3 md:h-3 rounded-full ${isActive ? 'bg-green-400' : 'bg-gray-300'} border-2 border-gray-700`}></button>
         </div>
         <div className='flex w-full relative items-center'>
-          <div className='w-[50%]'>
+          <div className='w-[80%]'>
             <p className={`text-md font-semibold ${isUnseenMsg ? 'text-blue-500': 'text-black'}`}>{props.username}</p>
             <p className={`text-xs`}>
               {isActive ? 'Online' : 'Offline'}
             </p>
-          </div>
-          <div className='flex w-[25%] gap-1'>
-            <input onClick={(e) => e.stopPropagation()} type="" className='w-10 border rounded-2xl px-1 text-center focus:outline-none' />
-            <button onClick={(e) => e.stopPropagation()} className='bg-red-400 text-xs p-1 rounded-2xl'>Join </button>
           </div>
           <div className='flex gap-1 ml-2'>
             <button onClick={(e) => {e.stopPropagation(); add()}}>+</button>

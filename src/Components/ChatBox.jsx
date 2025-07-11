@@ -1,8 +1,6 @@
-import {Phone, Video, Info, SendHorizonal, User, CirclePlus, FilePlus, Image, ArrowLeft, X, File, Smile,} from 'lucide-react'
+import {SendHorizonal, User, CirclePlus, FilePlus, Image, ArrowLeft, X, File, Smile,} from 'lucide-react'
 import {useChatBox} from '../Contexts/ChatBoxContext'
 import EmojiPicker from 'emoji-picker-react'
-
-
 
 function ChatBox(props) {
   const {
@@ -51,7 +49,7 @@ function ChatBox(props) {
           <button onClick={() => setIsActive(active => !active)} className={`absolute right-0 bottom-0 w-4 md:w-3 h-4 md:h-3 rounded-full ${isActive ? 'bg-green-500' : 'bg-gray-400'} border-2 border-white`}/>
         </div>
         <h1 className='text-2xl md:text-lg font-bold w-full '>
-          {socket.id}
+          {props.username ? props.username : props.user}
         </h1>
         <div  className='flex gap-2 pr-1 items-center'>
           <button onClick={props.onClose} className='cursor-pointer'>
