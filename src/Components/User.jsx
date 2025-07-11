@@ -39,14 +39,14 @@ function User(props) {
               {isActive ? 'Online' : 'Offline'}
             </p>
           </div>
-          <div className='flex gap-1'>
+          <div className='flex gap-1 ml-2'>
             <button onClick={(e) => {e.stopPropagation(); add()}}>+</button>
             <button onClick={(e) => {e.stopPropagation(); remove()}}>-</button>
           </div>
           {msgCount >=1 && (
             <div className='absolute right-0 border-1 border-red-300 rounded-full w-4 h-4 bg-red-300 text-xs flex items-center justify-center font-semibold' value={msgCount} onClick={(e) => {e.stopPropagation(); handleUnseenMsg(e)}}>
-            {msgCount}
-          </div>
+              {msgCount}
+            </div>
           )}
         </div>
     </div>
