@@ -5,6 +5,7 @@ function User(props) {
   const [isActive, setIsActive] = useState(true)
   const [msgCount, setMsgCount] = useState(0)
   const [isUnseenMsg, setIsUnseenMsg] = useState(false) 
+
   const add = () => {
     if (msgCount < 10) {
       setMsgCount(msgCount + 1)
@@ -34,7 +35,7 @@ function User(props) {
         </div>
         <div className='flex w-full relative items-center'>
           <div className='w-[80%]'>
-            <p className={`text-md font-semibold ${isUnseenMsg ? 'text-blue-500': 'text-black'}`}>{props.username}</p>
+            <p className={`text-md font-semibold ${isUnseenMsg ? 'text-blue-500': 'text-black'}`}>{props.user}</p>
             <p className={`text-xs`}>
               {isActive ? 'Online' : 'Offline'}
             </p>

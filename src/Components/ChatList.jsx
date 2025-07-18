@@ -9,24 +9,37 @@ import User from '../Components/User'
 function ChatList(props) {
   const [isChatBoxOpen, setisChatBoxOpen] = useState(false)
   const [isAIOpen, setIsAIOpen] = useState(false)
+  const [createRoom, setCreateRoom] = useState(false)
   const [searchResult, setSearchResult] = useState('')
   const [selectedUser, setSelectedUser] = useState('')
+  const [joinedRoom, setJoinedRoom] = useState('')
+  const [joinedUsername, setJoinedUsername] = useState('')
   const [username, setUsername] = useState('')
   const [room, setRoom] = useState('')
   const scrollRef = useRef(null)
 
   const { joinRoom } = useChatBox()
 
-  const handleSearch = (e) => {
-    setSearchResult(e.target.value)
+  const toggleRoom = () => setCreateRoom(!createRoom)
+  const handleSearch = (e) => setSearchResult(e.target.value)
+
+  const handleRoom = () => {
+    if (username && room) {
+      joinRoom(room, username)
+      setJoinedRoom(room)
+      setJoinedUsername(username)
+      setisChatBoxOpen(true)
+      setRoom('')
+      setUsername('')
+    }
   }
   
   const names= JSON.parse(JSON.stringify(user.users))
-  console.log(names)
+  // const names = onlineUsers.length > 0 ? onlineUsers : JSON.parse(JSON.stringify(user.users))
   
-  const searchedName = names.filter(name =>
+  const searchedUser = names.filter(name =>
     name.toLowerCase().includes(searchResult.toLowerCase())
-  )
+  ) 
 
   return (
     <div className='fixed md:right-12 md:bottom-0 bg-blue-200 flex flex-col md:m-2 md:mx-5 shadow-lg h-[100svh] md:max-h-[450px] w-full md:max-w-[350px]  md:rounded-xl '>
@@ -51,41 +64,46 @@ function ChatList(props) {
         <div className=' bg-white mx-2 rounded-full'>
           <div className='flex items-center gap-1 py-1 px-2'>
             <input type="text" placeholder='Search...' className='w-full px-1 focus:outline-none  text-sm' value={searchResult} onChange={handleSearch}/>
-            <button onClick={() => setSearchResult()}><Search className='w-6 h-6 md:w-5 md:h-5 text-gray-5 cursor-pointer' /></button>
+            <button onClick={() => setSearchResult()}>
+              <Search className='w-6 h-6 md:w-5 md:h-5 text-gray-5 cursor-pointer' />
+            </button>
           </div>
         </div>
 
         {!isChatBoxOpen ? (
           <>
-          <div className='h-[80%] md:h-[20%]  mt-3 flex flex-col items-center gap-1'>
-            <div className='flex gap-1 items-center'>
-              <p className='font-semibold'>User: </p>
-              <input className=' border rounded-2xl px-1 text-center focus:outline-none bg-blue-100' placeholder='Username' value={username} onChange={e => setUsername(e.target.value)}/>
-            </div>  
-            <div className='flex gap-1 items-center'>
-              <p className='font-semibold'>Room:</p>
-              <input className=' border rounded-2xl px-1 text-center focus:outline-none bg-blue-100' placeholder='Room' value={room} onChange={e => setRoom(e.target.value)}/>
-            </div>  
-              <button className=' bg-red-400 rounded-2xl w-20 cursor-pointer' 
-                onClick={() => {
-                  if (username && room) {
-                    joinRoom(room)
-                    setisChatBoxOpen(true)
-                    setSelectedUser(username)
-                  }
-                }}>
+          <div className='mt-3 flex flex-col items-center gap-1'>
+            <button onClick={toggleRoom} className='bg-blue-400 rounded-2xl cursor-pointer p-1 px-3'>
+              <p className='text-center text-sm font-semibold '>Room</p>
+            </button>
+            {createRoom && (
+              <>
+                <div className='mt-1 flex gap-2'>
+                  <div className='flex flex-col gap-1'>
+                    <p className='font-semibold'>Username: </p>
+                    <p className='font-semibold'>Room:</p>
+                  </div>  
+                  <div className='flex flex-col gap-1 items-center'>
+                    <input className='max-w-full border rounded-2xl px-1 focus:outline-none bg-blue-100' placeholder='Username' value={username} onChange={e => setUsername(e.target.value)}/>
+                    <input className=' border rounded-2xl px-1 focus:outline-none bg-blue-100' placeholder='Room' value={room} onChange={e => setRoom(e.target.value)}/>
+                  </div>  
+                </div>
+                <button className='my-1 bg-red-400 rounded-2xl w-20 cursor-pointer' onClick={handleRoom}>
                   Join
-              </button>
+                </button>
+              </>
+            )}
           </div>
+          {/* {joinedUsername && ( */}
           <div ref={scrollRef} className='flex flex-col m-2 gap-1 overflow-y-scroll scrollbar-hide'>
-            {searchedName.map((name, id) => (
-              <User key={id} onClick={() => {setisChatBoxOpen(true); setSelectedUser(name)}} username={name}/>
+            {searchedUser.map((name, id) => (
+              <User key={id} onClick={() => {setisChatBoxOpen(true); setSelectedUser(name)}} user={name}/>
             ))}
-            
           </div>
-          </>
+          {/* )} */}
+        </>
         ) : (
-          <ChatBox onExit={() => setisChatBoxOpen(false)} onClose={props.onClose} user={selectedUser} username={username} room={room}/>
+          <ChatBox onExit={() => setisChatBoxOpen(false)} onClose={props.onClose} user= {selectedUser} username={joinedUsername} room={joinedRoom}/>
         )}
       </>
       )}

@@ -18,39 +18,40 @@ export const ChatBoxContextProvider = ({children}) => {
   const [previewFile, setPreviewFile] = useState([])
   const [isEmoji, setIsEmoji] = useState(false)
   const [currentRoom, setCurrentRoom] = useState('')
-
-  socket.on('connect', () => {
-    console.log(`Connected with id: ${socket.id}`)
-  })
-  // socket.on('connect-error', () => {
-  //   console.error('connection error', err);
-  // })
+  const [username, setUsername] = useState('')
+  
+  const scrollRef = useRef(null)
+  const typingTimeoutRef = useRef(null)
+  const quickReplies = replies.client  
+  
   useEffect(() => {
-     socket.on('receive-message', (newMsg) => {
-      setMessage(prev => [...prev, newMsg])
-    }) 
+    if (!socket.connected) {
+      socket.connect()
+    }
+    socket.on('connect', () => {
+      console.log(`Connected with id: ${socket.id}`)
+    })
     return () => {
-      socket.off('receive-message')
+      socket.off('connect')
     }
   }, [])
 
-  const joinRoom = (room) => {
+  const joinRoom = (room, username) => {
     if (socket && room) {
-      socket.emit('join-room', room)
+      socket.emit('join-room', room, username)
       setCurrentRoom(room)
-      const now = Date.now()
-      setMessage([
-        {text: 'Hello! Welcome.', sender:'vendor', timeStamp: now},
-        {text: 'How can I help you?', sender:'vendor', timeStamp: now}
-      ])
+      setUsername(username)
     }
+    const now = Date.now()
+    setMessage([
+      {text: 'Hello! Welcome.', sender:'vendor', timeStamp: now},
+      {text: 'How can I help you?', sender:'vendor', timeStamp: now}
+    ])
+    socket.on('receive-message', (newMsg) => {
+      setMessage(prev => [...prev, newMsg])
+    })
   }
 
-  const scrollRef = useRef(null)
-  const typingTimeoutRef = useRef(null)
-  const quickReplies = JSON.parse(JSON.stringify(replies.client))
-  
-  const toggleMenu = () => setShowMenu(prev => !prev)
   
   useEffect(() => {
     if (scrollRef.current) {
@@ -66,12 +67,6 @@ export const ChatBoxContextProvider = ({children}) => {
   },[])
   const date = currentTime.toLocaleDateString([], {month:'short', day:'numeric', year:'numeric'})
   const day = currentTime.toLocaleDateString([], {weekday:'short'})
-    
-  // useEffect(() => {
-  //   if (message.length === 0) {
-      
-  //   }
-  // },[])
 
   const handleMediaChange = (e) => {
     const medias = Array.from(e.target.files || []);
@@ -92,41 +87,40 @@ export const ChatBoxContextProvider = ({children}) => {
   const sendMessage = (text) => {
     const customText = (text ?? input).trim()
     const isText = customText !== '';
-    const isMedia = selectedMedia  && selectedMedia.length>0;  
-    const isFile = selectedFile && selectedFile.length > 0;
+    const isMedia = selectedMedia.length>0;  
+    const isFile = selectedFile.length > 0;
     if (!isText && !isMedia && !isFile) return;
     if(!currentRoom){
       alert('Please join a room first');
       return; 
     }
+    if(!text && !media && !file) return
+
     const newMsg = {
       sender: socket.id,
+      senderName: username,
       timeStamp: Date.now()
     }
     if(isText){
       newMsg.text = customText
     }
-    if(isMedia && previewMedia.length > 0){
+    if(isMedia){
       newMsg.type = 'media'
       newMsg.media = previewMedia.map((url, i) => ({
         url,
         type: selectedMedia[i].type.startsWith('image/') ? 'image' : 'video' 
       }));
     }
-    if (isFile && previewFile.length === selectedFile.length){
+    if (isFile){
       newMsg.type = 'file'
       newMsg.file = previewFile.map((url, i) => ({
         url,
-        name: selectedFile[i]?.name,
-        type: selectedFile[i]?.type
+        name: selectedFile[i].name,
+        type: selectedFile[i].type
       }))
     }
     setMessage(prev => [...prev, newMsg])
-    if (socket.connected) {
-      socket.emit('send-message', newMsg, currentRoom)
-    }else{
-      console.warn('socket not connected');
-    }
+    socket.emit('send-message', newMsg, currentRoom)
     //resetting state
     setInput('')
     setOptionVisible(false)
@@ -157,12 +151,13 @@ export const ChatBoxContextProvider = ({children}) => {
     },1000)
   }
 
+  const toggleMenu = () => setShowMenu(prev => !prev)
   const onEmojiClick = (emojiObject) => {
     setInput(prevInput => prevInput + emojiObject.emoji)
   }
 
   return (
-    <ChatBoxContext.Provider value = {{message, input, optionVisible, isActive, isTyping, showMenu, previewMedia, previewFile, selectedMedia, selectedFile, date, day, scrollRef, typingTimeoutRef, quickReplies, toggleMenu, handleMediaChange, handleFileChange, sendMessage, handleKey, handleInputChange, setPreviewMedia, setSelectedFile, setPreviewFile, setIsActive, isEmoji, setIsEmoji, onEmojiClick, socket, joinRoom, currentRoom}}>
+    <ChatBoxContext.Provider value = {{message, input, optionVisible, isActive, isTyping, showMenu, previewMedia, previewFile, selectedMedia, selectedFile, date, day, scrollRef, quickReplies, toggleMenu, handleMediaChange, handleFileChange, sendMessage, handleKey, handleInputChange, setPreviewMedia, setSelectedFile, setPreviewFile, setIsActive, isEmoji, setIsEmoji, onEmojiClick, socket, currentRoom, joinRoom, username}}>
         {children}
     </ChatBoxContext.Provider>
   )
