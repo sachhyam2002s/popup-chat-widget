@@ -21,7 +21,6 @@ export const ChatBoxContextProvider = ({children}) => {
   const [username, setUsername] = useState('')
   
   const scrollRef = useRef(null)
-  const typingTimeoutRef = useRef(null)
   const quickReplies = replies.client  
   
   useEffect(() => {
@@ -42,17 +41,15 @@ export const ChatBoxContextProvider = ({children}) => {
       setCurrentRoom(room)
       setUsername(username)
     }
-    const now = Date.now()
     setMessage([
-      {text: 'Hello! Welcome.', sender:'vendor', timeStamp: now},
-      {text: 'How can I help you?', sender:'vendor', timeStamp: now}
+      {text: 'Hello! Welcome.', sender:'vendor'},
+      {text: 'How can I help you?', sender:'vendor'}
     ])
     socket.on('receive-message', (newMsg) => {
       setMessage(prev => [...prev, newMsg])
     })
   }
 
-  
   useEffect(() => {
     if (scrollRef.current) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight
@@ -94,8 +91,7 @@ export const ChatBoxContextProvider = ({children}) => {
       alert('Please join a room first');
       return; 
     }
-    if(!text && !media && !file) return
-
+    if(!isText && !isMedia && !isFile) return
     const newMsg = {
       sender: socket.id,
       senderName: username,
@@ -121,6 +117,7 @@ export const ChatBoxContextProvider = ({children}) => {
     }
     setMessage(prev => [...prev, newMsg])
     socket.emit('send-message', newMsg, currentRoom)
+    socket.emit('stopTyping', currentRoom, socket.id);
     //resetting state
     setInput('')
     setOptionVisible(false)
@@ -141,15 +138,34 @@ export const ChatBoxContextProvider = ({children}) => {
   }
 
   const handleInputChange = (e) =>{
-    setInput (e.target.value)
-    setIsTyping(true)
-    if(typingTimeoutRef.current){
-      clearTimeout(typingTimeoutRef.current)
-    }
-    typingTimeoutRef.current = setTimeout(()=>{
-      setIsTyping(false)
-    },1000)
+    const value = e.target.value
+    setInput(value)
+    if (socket && currentRoom) {
+      if (value.trim() !== '') {
+        socket.emit('typing', currentRoom, socket.id)        
+      }else{
+        socket.emit('stopTyping', currentRoom, socket.id) 
+      }
+    }    
   }
+  useEffect(() => {
+    const handleTyping = (room, senderId) => {
+      if (room === currentRoom && senderId !== socket.id) {
+        setIsTyping(true)
+      }
+    }
+    const handleStopTyping = (room, senderId) => {
+      if (room === currentRoom && senderId !== socket.id) {
+        setIsTyping(false)
+      }
+    }
+    socket.on('typing', handleTyping)
+    socket.on('stopTyping', handleStopTyping)
+    return () => {
+      socket.off('typing', handleTyping)
+      socket.off('stopTyping', handleStopTyping)
+    }
+  }, [currentRoom, socket])
 
   const toggleMenu = () => setShowMenu(prev => !prev)
   const onEmojiClick = (emojiObject) => {
@@ -157,7 +173,7 @@ export const ChatBoxContextProvider = ({children}) => {
   }
 
   return (
-    <ChatBoxContext.Provider value = {{message, input, optionVisible, isActive, isTyping, showMenu, previewMedia, previewFile, selectedMedia, selectedFile, date, day, scrollRef, quickReplies, toggleMenu, handleMediaChange, handleFileChange, sendMessage, handleKey, handleInputChange, setPreviewMedia, setSelectedFile, setPreviewFile, setIsActive, isEmoji, setIsEmoji, onEmojiClick, socket, currentRoom, joinRoom, username}}>
+    <ChatBoxContext.Provider value = {{message, input, optionVisible, isActive, isTyping, showMenu, previewMedia, previewFile, selectedMedia, selectedFile, date, day, scrollRef, quickReplies, toggleMenu, handleMediaChange, handleFileChange, sendMessage, handleKey, handleInputChange, setPreviewMedia, setSelectedFile, setPreviewFile, setIsActive, isEmoji, setIsEmoji, onEmojiClick, socket, joinRoom}}>
         {children}
     </ChatBoxContext.Provider>
   )
