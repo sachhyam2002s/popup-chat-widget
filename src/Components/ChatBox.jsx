@@ -1,4 +1,4 @@
-import {SendHorizonal, User, CirclePlus, FilePlus, Image, ArrowLeft, X, File, Smile,} from 'lucide-react'
+import {SendHorizonal, User, CirclePlus, FilePlus, Image, ArrowLeft, X, File, Smile, CircleX, CheckCheck} from 'lucide-react'
 import {useChatBox} from '../Contexts/ChatBoxContext'
 import EmojiPicker from 'emoji-picker-react'
 
@@ -32,9 +32,10 @@ function ChatBox(props) {
     isEmoji,
     setIsEmoji,
     onEmojiClick,
-    socket
+    socket,
+    lastOwnMsgId
   } = useChatBox();
-
+  
   return (
     <>
     <div className='fixed md:right-12 bottom-0 bg-gray-400 flex flex-col md:m-2 md:mx-5 shadow-lg h-[100svh] md:max-h-[450px] w-full md:max-w-[350px]  md:rounded-xl '>
@@ -49,7 +50,7 @@ function ChatBox(props) {
           <button onClick={() => setIsActive(active => !active)} className={`absolute right-0 bottom-0 w-4 md:w-3 h-4 md:h-3 rounded-full ${isActive ? 'bg-green-500' : 'bg-gray-400'} border-2 border-white`}/>
         </div>
         <h1 className='text-2xl md:text-lg font-bold w-full '>
-          {props.room || props.username || props.user}
+          {props.group || props.username || props.user}
         </h1>
         <div  className='flex gap-2 pr-1 items-center'>
           <button onClick={props.onClose} className='cursor-pointer'>
@@ -62,7 +63,7 @@ function ChatBox(props) {
         <span className='text-xs text-center'>
           {date}, {day}
         </span>
-        {message.map((msg, i) => {
+        {message.filter(Boolean).map((msg, i) => {
           const showTime = i === 1 ||
           (i>1 &&
             msg.timeStamp &&
@@ -86,7 +87,7 @@ function ChatBox(props) {
                 {msg.text && (
                   <div className='flex flex-col items-start max-w-[80%]'>
                     <span className='ml-1 text-xs text-gray-500'>{msg.sender !== socket.id ? msg.senderName : '' }</span>
-                    <div className={`mx-1 rounded-2xl px-2 py-1 text-lg md:text-sm  break-words whitespace-pre-wrap mb-1 ${msg.sender === socket.id ? 'bg-blue-300' : 'bg-gray-300'}`}>
+                    <div className={`mx-1 rounded-2xl px-2 py-1 text-lg md:text-sm  break-all whitespace-pre-wrap ${msg.sender === socket.id ? 'bg-blue-300' : 'bg-gray-300'}`}>
                       {msg.text}
                     </div>
                   </div>
@@ -106,11 +107,11 @@ function ChatBox(props) {
                   )}
                   {Array.isArray(msg.file) && (
                     <div className={`flex flex-col mx-1 ${msg.sender === socket.id ? 'items-end' : 'items-start'}`}>
-                      <span className='ml-1 text-xs text-gray-500'>{msg.sender !== socket.id ? msg.senderName : '' }</span>
+                      <span className='ml-1 text-xs text-gray-500'>{msg.sender !== socket.id ? msg.senderName : ''}</span>
                       {msg.file.map((file, idx) => (
                         <div key={idx} className={`flex items-center gap-1  rounded-lg px-2 py-1 mb-1 ${msg.sender === socket.id ? 'bg-blue-300' : 'bg-gray-300'}`}>
                           <File className='w-6 h-6 stroke-1 text-gray-700'/>
-                          <a href={file.url} download={file.name} className='text-xs break-all underline hover:text-blue-500'>
+                          <a href={file.url} download={file.name} className='text-xs  max-w-80 md:max-w-50 break-all underline hover:text-blue-500'>
                             {file.name}
                           </a>
                         </div>
@@ -124,10 +125,31 @@ function ChatBox(props) {
                   </div>
                 )}
               </div>
-              
+                {msg.sender === socket.id && msg.id === lastOwnMsgId && (
+                  <div className={`flex items-center gap-1 justify-end text-xs ${msg.status === 'seen' ? 'text-blue-500' : msg.status === 'delivered' ? 'text-gray-500' : 'text-red-500'} mx-1`}>
+                    {msg.status === 'seen' && (
+                      <>
+                        <p>Seen</p>
+                      </>
+                    )} 
+                    {msg.status === 'delivered' && (
+                      <>
+                        <p>Delivered</p>
+                        <CheckCheck className='w-4 h-4'/>
+                      </>
+                    )}
+                    {!msg.status && (
+                      <>
+                        <CircleX className='w-4 h-4'/>
+                        <p>Message not sent.</p>
+                      </>
+                    )}
+                  </div>
+                )}
             </div>
           )
         })}
+        
       </div>
 
       {isTyping && (

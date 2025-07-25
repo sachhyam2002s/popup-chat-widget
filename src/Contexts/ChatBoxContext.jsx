@@ -16,8 +16,9 @@ export const ChatBoxContextProvider = ({children}) => {
   const [selectedMedia, setSelectedMedia] = useState([])
   const [selectedFile, setSelectedFile] = useState([])
   const [previewFile, setPreviewFile] = useState([])
+  const [lastOwnMsgId, setLastOwnMsgId] = useState(null)
   const [isEmoji, setIsEmoji] = useState(false)
-  const [currentRoom, setCurrentRoom] = useState('')
+  const [currentGroup, setCurrentGroup] = useState('')
   const [username, setUsername] = useState('')
   
   const scrollRef = useRef(null)
@@ -35,20 +36,49 @@ export const ChatBoxContextProvider = ({children}) => {
     }
   }, [])
 
-  const joinRoom = (room, username) => {
-    if (socket && room) {
-      socket.emit('join-room', room, username)
-      setCurrentRoom(room)
+  const joinGroup = (group, username) => {
+    if (socket && group) {
+      socket.emit('join-group', group, username)
+      setCurrentGroup(group)
       setUsername(username)
     }
     setMessage([
       {text: 'Hello! Welcome.', sender:'vendor'},
       {text: 'How can I help you?', sender:'vendor'}
     ])
-    socket.on('receive-message', (newMsg) => {
-      setMessage(prev => [...prev, newMsg])
-    })
   }
+
+  useEffect(() => {
+    const handleReceiveMsg = (newMsg) => {
+      if(newMsg.sender === socket.id || newMsg.self) {
+        setMessage(prev => 
+          prev.map(msg => 
+            msg.id === newMsg.id ? {...msg, status: 'delivered'} : msg
+          )
+        )
+      }else{
+        setMessage(prev => [...prev, {...newMsg, status:'sent'}])
+        if (newMsg.group === currentGroup) {
+          socket.emit('seen-message', currentGroup, newMsg.id);
+        }
+      }
+    }
+    const handleSeenMsg = (group, msgId) => {
+      if (group === currentGroup) {
+        setMessage(prev =>
+          prev.map(msg => 
+            msg.id === msgId ? {...msg, status: 'seen'} : msg
+          )
+        )   
+      }
+    }
+    socket.on('receive-message', handleReceiveMsg);
+    socket.on('seen-message', handleSeenMsg);
+    return () =>{
+      socket.off('receive-message', handleReceiveMsg);
+      socket.off('seen-message', handleSeenMsg);
+    }
+  }, [currentGroup]);
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -87,15 +117,18 @@ export const ChatBoxContextProvider = ({children}) => {
     const isMedia = selectedMedia.length>0;  
     const isFile = selectedFile.length > 0;
     if (!isText && !isMedia && !isFile) return;
-    if(!currentRoom){
-      alert('Please join a room first');
+    if(!currentGroup){
+      alert('Please join a group first');
       return; 
     }
     if(!isText && !isMedia && !isFile) return
     const newMsg = {
+      id: Date.now(),
       sender: socket.id,
       senderName: username,
-      timeStamp: Date.now()
+      group: currentGroup,
+      timeStamp: Date.now(),
+      status: 'sent',
     }
     if(isText){
       newMsg.text = customText
@@ -116,8 +149,10 @@ export const ChatBoxContextProvider = ({children}) => {
       }))
     }
     setMessage(prev => [...prev, newMsg])
-    socket.emit('send-message', newMsg, currentRoom)
-    socket.emit('stopTyping', currentRoom, socket.id);
+    setLastOwnMsgId(newMsg.id)
+    socket.emit('send-message', newMsg, currentGroup)
+    socket.emit('stopTyping', currentGroup, socket.id);
+  
     //resetting state
     setInput('')
     setOptionVisible(false)
@@ -140,22 +175,22 @@ export const ChatBoxContextProvider = ({children}) => {
   const handleInputChange = (e) =>{
     const value = e.target.value
     setInput(value)
-    if (socket && currentRoom) {
+    if (socket && currentGroup) {
       if (value.trim() !== '') {
-        socket.emit('typing', currentRoom, socket.id)        
+        socket.emit('typing', currentGroup, socket.id)        
       }else{
-        socket.emit('stopTyping', currentRoom, socket.id) 
+        socket.emit('stopTyping', currentGroup, socket.id) 
       }
     }    
   }
   useEffect(() => {
-    const handleTyping = (room, senderId) => {
-      if (room === currentRoom && senderId !== socket.id) {
+    const handleTyping = (group, senderId) => {
+      if (group === currentGroup && senderId !== socket.id) {
         setIsTyping(true)
       }
     }
-    const handleStopTyping = (room, senderId) => {
-      if (room === currentRoom && senderId !== socket.id) {
+    const handleStopTyping = (group, senderId) => {
+      if (group === currentGroup && senderId !== socket.id) {
         setIsTyping(false)
       }
     }
@@ -165,7 +200,7 @@ export const ChatBoxContextProvider = ({children}) => {
       socket.off('typing', handleTyping)
       socket.off('stopTyping', handleStopTyping)
     }
-  }, [currentRoom, socket])
+  }, [currentGroup, socket])
 
   const toggleMenu = () => setShowMenu(prev => !prev)
   const onEmojiClick = (emojiObject) => {
@@ -173,7 +208,7 @@ export const ChatBoxContextProvider = ({children}) => {
   }
 
   return (
-    <ChatBoxContext.Provider value = {{message, input, optionVisible, isActive, isTyping, showMenu, previewMedia, previewFile, selectedMedia, selectedFile, date, day, scrollRef, quickReplies, toggleMenu, handleMediaChange, handleFileChange, sendMessage, handleKey, handleInputChange, setPreviewMedia, setSelectedFile, setPreviewFile, setIsActive, isEmoji, setIsEmoji, onEmojiClick, socket, joinRoom}}>
+    <ChatBoxContext.Provider value = {{message, input, optionVisible, isActive, isTyping, showMenu, previewMedia, previewFile, selectedMedia, selectedFile, date, day, scrollRef, quickReplies, toggleMenu, handleMediaChange, handleFileChange, sendMessage, handleKey, handleInputChange, setPreviewMedia, setSelectedFile, setPreviewFile, setIsActive, isEmoji, setIsEmoji, onEmojiClick, socket, joinGroup, lastOwnMsgId}}>
         {children}
     </ChatBoxContext.Provider>
   )

@@ -9,27 +9,28 @@ import User from '../Components/User'
 function ChatList(props) {
   const [isChatBoxOpen, setisChatBoxOpen] = useState(false)
   const [isAIOpen, setIsAIOpen] = useState(false)
-  const [createRoom, setCreateRoom] = useState(false)
   const [searchResult, setSearchResult] = useState('')
   const [selectedUser, setSelectedUser] = useState('')
-  const [joinedRoom, setJoinedRoom] = useState('')
+  const [showOptions, setShowOptions] = useState(false)
+  const [activeOption, setActiveOption] = useState(null)
+  const [joinedGroup, setJoinedGroup] = useState('')
   const [joinedUsername, setJoinedUsername] = useState('')
   const [username, setUsername] = useState('')
-  const [room, setRoom] = useState('')
+  const [group, setGroup] = useState('')
   const scrollRef = useRef(null)
 
-  const { joinRoom } = useChatBox()
+  const { joinGroup } = useChatBox()
 
-  const toggleRoom = () => setCreateRoom(!createRoom)
+  const toggleGroup = () => setCreateGroup(!createGroup)
   const handleSearch = (e) => setSearchResult(e.target.value)
 
-  const handleRoom = () => {
-    if (username && room) {
-      joinRoom(room, username)
-      setJoinedRoom(room)
+  const handleGroup = () => {
+    if (username && group) {
+      joinGroup(group, username)
+      setJoinedGroup(group)
       setJoinedUsername(username)
       setisChatBoxOpen(true)
-      setRoom('')
+      setGroup('')
       setUsername('')
     }
   }
@@ -72,38 +73,66 @@ function ChatList(props) {
 
         {!isChatBoxOpen ? (
           <>
-          <div className='mt-3 flex flex-col items-center gap-1'>
-            <button onClick={toggleRoom} className='bg-blue-400 rounded-2xl cursor-pointer p-1 px-3'>
-              <p className='text-center text-sm font-semibold '>Room</p>
-            </button>
-            {createRoom && (
-              <>
-                <div className='mt-1 flex gap-2'>
-                  <div className='flex flex-col gap-1'>
-                    <p className='font-semibold'>Username: </p>
-                    <p className='font-semibold'>Room:</p>
+          <div className='mt-2 flex flex-col items-center gap-1'>
+            {!showOptions&& (
+              <button onClick = {() => setShowOptions(true)} className='bg-blue-50 text-gray-600 cursor-pointer rounded-full px-3 py-1 font-semibold'>
+                Group
+              </button>
+            )}
+            {showOptions && (
+              <div className='flex gap-1 items-center text-center font-semibold bg-blue-50  py-1 px-3 rounded-full'>
+                <button onClick = {() => setActiveOption('create')} className={`cursor-pointer underline-offset-4 decoration-2 ${activeOption === 'create' ? 'underline text-blue-600' : 'text-gray-600'}`}>
+                  Create Group
+                </button>
+                <p className='flex items-center'>/</p>
+                <button onClick = {() => setActiveOption('join')} className={`cursor-pointer underline-offset-4 decoration-2 ${activeOption === 'join' ? 'underline text-blue-600' : 'text-gray-600'}`}>
+                  Join Group
+                </button>
+              </div>
+            )}
+            {showOptions && activeOption === 'create' && (
+              <div className='flex flex-col items-center gap-2'>
+                <div className='mt-1 flex flex-col gap-2'>
+                  <div className='flex justify-between gap-1'>
+                    <p>Admin: </p>
+                    <input className='border rounded-2xl px-1 focus:outline-none bg-blue-100' placeholder='Username' value={username} onChange={e => setUsername(e.target.value)}/>
                   </div>  
-                  <div className='flex flex-col gap-1 items-center'>
-                    <input className='max-w-full border rounded-2xl px-1 focus:outline-none bg-blue-100' placeholder='Username' value={username} onChange={e => setUsername(e.target.value)}/>
-                    <input className=' border rounded-2xl px-1 focus:outline-none bg-blue-100' placeholder='Room' value={room} onChange={e => setRoom(e.target.value)}/>
+                  <div className='flex justify-between gap-1'>
+                    <p>Group:</p>
+                    <input className='border rounded-2xl px-1 focus:outline-none bg-blue-100' placeholder='Group' value={group} onChange={e => setGroup(e.target.value)}/>
                   </div>  
                 </div>
-                <button className='my-1 bg-red-400 rounded-2xl w-20 cursor-pointer' onClick={handleRoom}>
+                <button className='bg-red-500 text-white rounded-2xl px-2 cursor-pointer font-semibold' onClick={handleGroup}>
+                  Create
+                </button>
+              </div>
+            )}
+            {showOptions && activeOption === 'join' && (
+              <div className='flex flex-col items-center gap-2'>
+                <div className='mt-1 flex flex-col gap-2'>
+                  <div className='flex justify-between gap-1'>
+                    <p className='font-semibold'>User: </p>
+                    <input className='border rounded-2xl px-1 focus:outline-none bg-blue-100' placeholder='Username' value={username} onChange={e => setUsername(e.target.value)}/>
+                  </div>  
+                  <div className='flex justify-between gap-1'>
+                    <p className='font-semibold'>Group:</p>
+                    <input className='border rounded-2xl px-1 focus:outline-none bg-blue-100' placeholder='Group' value={group} onChange={e => setGroup(e.target.value)}/>
+                  </div>  
+                </div>
+                <button className='bg-red-500 text-white rounded-2xl px-3 py-1 cursor-pointer font-bold' onClick={handleGroup}>
                   Join
                 </button>
-              </>
+              </div>
             )}
           </div>
-          {/* {joinedUsername && ( */}
           <div ref={scrollRef} className='flex flex-col m-2 gap-1 overflow-y-scroll scrollbar-hide'>
             {searchedUser.map((name, id) => (
               <User key={id} onClick={() => {setisChatBoxOpen(true); setSelectedUser(name)}} user={name}/>
             ))}
           </div>
-          {/* )} */}
         </>
         ) : (
-          <ChatBox onExit={() => setisChatBoxOpen(false)} onClose={props.onClose} user= {selectedUser} username={joinedUsername} room={joinedRoom}/>
+          <ChatBox onExit={() => setisChatBoxOpen(false)} onClose={props.onClose} user= {selectedUser} username={joinedUsername} group={joinedGroup}/>
         )}
       </>
       )}
