@@ -1,10 +1,11 @@
-import { useState, useRef} from 'react'
+import { useState, useRef, useEffect, use} from 'react'
 import {Search, X, Bot} from 'lucide-react'
 import ChatBox from '../Components/ChatBox'
 import ChatBot from '../Components/ChatBot'
 import {useChatBox} from '../Contexts/ChatBoxContext'
 import user from '../users.json'
 import User from '../Components/User'
+import Group from '../Components/Group'
 
 function ChatList(props) {
   const [isChatBoxOpen, setisChatBoxOpen] = useState(false)
@@ -17,16 +18,15 @@ function ChatList(props) {
   const [joinedUsername, setJoinedUsername] = useState('')
   const [username, setUsername] = useState('')
   const [group, setGroup] = useState('')
+  const [isWaitingForApproval, setIsWaitingForApproval] = useState(false)
+  const [notificationMsg, setNotificationMsg] = useState('')
   const scrollRef = useRef(null)
 
-  const { joinGroup } = useChatBox()
+  const { joinGroup, createGroup, groupList, socket } = useChatBox()
 
-  const toggleGroup = () => setCreateGroup(!createGroup)
-  const handleSearch = (e) => setSearchResult(e.target.value)
-
-  const handleGroup = () => {
+  const handleCreateGroup = () => {
     if (username && group) {
-      joinGroup(group, username)
+      createGroup(group, username)
       setJoinedGroup(group)
       setJoinedUsername(username)
       setisChatBoxOpen(true)
@@ -34,10 +34,39 @@ function ChatList(props) {
       setUsername('')
     }
   }
-  
-  const names= JSON.parse(JSON.stringify(user.users))
-  // const names = onlineUsers.length > 0 ? onlineUsers : JSON.parse(JSON.stringify(user.users))
-  
+
+  const handleJoinGroup = () => {
+    if (username && group) {
+      joinGroup(group, username)
+      setNotificationMsg(`Request sent to join group ${group}. Wait for admin approval.`)
+      setTimeout(() => setNotificationMsg(''), 3000)
+      setIsWaitingForApproval(true)
+      setGroup('')
+      setUsername('')
+    }
+  }
+
+  useEffect(() => { 
+    socket.on('join-approved', ({ groupName, username }) => {
+      setGropuList(prev => [
+        ...prev,
+        { name: groupName, admin: username }
+      ])
+      setJoinedGroup(groupName)
+      // setJoinedUsername(username)
+      setisChatBoxOpen(true)
+      // setIsWaitingForApproval(false)
+      setNotificationMsg(`You request to join the group: ${groupName} is approved.`)
+      setTimeout(() => setNotificationMsg(''), 3000)
+    })
+    return () => {
+      socket.off('join-approved')
+    }
+  },[])
+
+  const handleSearch = (e) => setSearchResult(e.target.value)
+    
+  const names= [...user.users]
   const searchedUser = names.filter(name =>
     name.toLowerCase().includes(searchResult.toLowerCase())
   ) 
@@ -65,7 +94,7 @@ function ChatList(props) {
         <div className=' bg-white mx-2 rounded-full'>
           <div className='flex items-center gap-1 py-1 px-2'>
             <input type="text" placeholder='Search...' className='w-full px-1 focus:outline-none  text-sm' value={searchResult} onChange={handleSearch}/>
-            <button onClick={() => setSearchResult()}>
+            <button onClick={() => setSearchResult('')}>
               <Search className='w-6 h-6 md:w-5 md:h-5 text-gray-5 cursor-pointer' />
             </button>
           </div>
@@ -74,6 +103,11 @@ function ChatList(props) {
         {!isChatBoxOpen ? (
           <>
           <div className='mt-2 flex flex-col items-center gap-1'>
+            {notificationMsg && (
+              <div className='bg-blue-100 text-blue-500 text-center rounded-md mx-2 py-1'>
+                {notificationMsg}
+              </div>
+            )}
             {!showOptions&& (
               <button onClick = {() => setShowOptions(true)} className='bg-blue-50 text-gray-600 cursor-pointer rounded-full px-3 py-1 font-semibold'>
                 Group
@@ -102,7 +136,7 @@ function ChatList(props) {
                     <input className='border rounded-2xl px-1 focus:outline-none bg-blue-100' placeholder='Group' value={group} onChange={e => setGroup(e.target.value)}/>
                   </div>  
                 </div>
-                <button className='bg-red-500 text-white rounded-2xl px-2 cursor-pointer font-semibold' onClick={handleGroup}>
+                <button className='bg-red-500 text-white rounded-2xl px-2 cursor-pointer font-semibold' onClick={handleCreateGroup}>
                   Create
                 </button>
               </div>
@@ -119,7 +153,7 @@ function ChatList(props) {
                     <input className='border rounded-2xl px-1 focus:outline-none bg-blue-100' placeholder='Group' value={group} onChange={e => setGroup(e.target.value)}/>
                   </div>  
                 </div>
-                <button className='bg-red-500 text-white rounded-2xl px-3 py-1 cursor-pointer font-bold' onClick={handleGroup}>
+                <button className='bg-red-500 text-white rounded-2xl px-3 py-1 cursor-pointer font-bold' onClick={handleJoinGroup}>
                   Join
                 </button>
               </div>
@@ -128,6 +162,9 @@ function ChatList(props) {
           <div ref={scrollRef} className='flex flex-col m-2 gap-1 overflow-y-scroll scrollbar-hide'>
             {searchedUser.map((name, id) => (
               <User key={id} onClick={() => {setisChatBoxOpen(true); setSelectedUser(name)}} user={name}/>
+            ))}
+            {Array.isArray(groupList) && groupList.map((group, id) => (
+              <Group key={id} onClick={() => {setJoinedGroup(group.name); setJoinedUsername(group.admin); setisChatBoxOpen(true);}} group={group.name} admin={group.admin}/>
             ))}
           </div>
         </>

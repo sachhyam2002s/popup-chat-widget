@@ -1,15 +1,20 @@
 import {useState, useEffect, useRef, createContext, useContext} from 'react'
 import replies from  '../quickReplies.json'
 import socket from '../socket'
+import { use } from 'react'
 
 const ChatBoxContext = createContext(null)
 
 export const ChatBoxContextProvider = ({children}) => {
   const [message, setMessage] = useState([])
   const [input, setInput] = useState('')
+  // const [group, setGroup] = useState('')
+  const  [groupList, setGroupList] = useState([])
   const [optionVisible, setOptionVisible] = useState(true)
   const [isActive, setIsActive] = useState(true)
   const [isTyping, setIsTyping] = useState(false)
+  const [pendingRequest, setPendingRequest] = useState([])
+  const [isAdmin, setIsAdmin] = useState(false)
   const [showMenu, setShowMenu] = useState(false)
   const [currentTime, setCurrentTime] = useState(new Date())
   const [previewMedia, setPreviewMedia] = useState([])
@@ -20,6 +25,7 @@ export const ChatBoxContextProvider = ({children}) => {
   const [isEmoji, setIsEmoji] = useState(false)
   const [currentGroup, setCurrentGroup] = useState('')
   const [username, setUsername] = useState('')
+  const [notificationMsg, setNotificationMsg] = useState('')
   
   const scrollRef = useRef(null)
   const quickReplies = replies.client  
@@ -31,22 +37,102 @@ export const ChatBoxContextProvider = ({children}) => {
     socket.on('connect', () => {
       console.log(`Connected with id: ${socket.id}`)
     })
+    socket.on('connect_error', () => {
+      console.error(`Connection error:`, err)
+    })
+    socket.on('disconnect', () => {
+      console.log(`Socket disonnected.`)
+    })
     return () => {
       socket.off('connect')
+      socket.off('connect_error')
+      socket.off('disconnect')
     }
   }, [])
 
-  const joinGroup = (group, username) => {
-    if (socket && group) {
-      socket.emit('join-group', group, username)
-      setCurrentGroup(group)
-      setUsername(username)
-    }
+  const createGroup = (groupName, adminName) => {
+    socket.emit('create-group', groupName, adminName)
+    setGroupList(prev => [...prev, {name: groupName, admin: adminName}])
+    setCurrentGroup(groupName)
+    setUsername(adminName)
+    setIsAdmin(true)
     setMessage([
       {text: 'Hello! Welcome.', sender:'vendor'},
       {text: 'How can I help you?', sender:'vendor'}
     ])
   }
+  const joinGroup = (groupName, username) => {
+    socket.emit('join-group', groupName, username)
+    setCurrentGroup(groupName)
+    setUsername(username)
+    setIsAdmin(false)
+    setMessage([
+      {text: 'Hello! Welcome.', sender:'vendor'},
+      {text: 'How can I help you?', sender:'vendor'}
+    ])
+  }
+
+  const handleAcceptRequest = (socketId) => {
+    socket.emit('accept-request', currentGroup, socketId);
+    setPendingRequest(prev => prev.filter(req => req.socketId !== socketId));
+  }
+  const handleRejectRequest = (socketId) => {
+    socket.emit('reject-request', currentGroup, socketId);
+    setPendingRequest(prev => prev.filter(req => req.socketId !== socketId));
+  }
+
+  useEffect(() => {
+    socket.on('join-request', ({ socketId, username, groupName }) => {
+      if (isAdmin && currentGroup === groupName) {
+        setPendingRequest(prev => [...prev, { socketId, username }]);
+      }
+    });
+    return () => {
+      socket.off('join-request')
+    }
+  }, [isAdmin, currentGroup])
+
+  useEffect(() => {
+    socket.on('group-updated', ({ groupName, members }) => {
+      setGroupList(prev => {
+        const groupExist = prev.some(group => group.name === groupName);
+        if(!groupExist) {
+          return [...prev, {name: groupName, admin: 'Adimn Name'}];
+        }
+        return prev.map(group => 
+          group.name === groupName ? {...group, members} : group
+        );
+      })
+    })
+    return () => {
+      socket.off('group-updated')
+    }
+  }, [])
+
+  useEffect(() => {
+    const handleRequestAccepted = ({groupName, adminName}) => {
+      setNotificationMsg(`Request accepted to join ${groupName}`);
+      setTimeout(() => setNotificationMsg(''), 3000);
+      setCurrentGroup(groupName);
+      setGroupList(prev => {
+        if (!prev.some(group => group.name === groupName)) {
+          return [...prev, {name: groupName, admin: adminName}];
+        }
+        return prev;
+      })
+    }
+    const handleRequestRejected = (groupName) => {
+      setNotificationMsg(`Request rejected to join ${groupName}`);
+      setTimeout(() => setNotificationMsg(''), 3000);
+      setCurrentGroup('');
+    }
+    socket.on('request-accepetd', handleRequestAccepted);
+    socket.on('request-rejected', handleRequestRejected);
+    return () => {
+      socket.off('request-accepted', handleRequestAccepted); 
+      socket.off('request-rejected', handleRequestRejected);
+    }
+  },[socket, username])
 
   useEffect(() => {
     const handleReceiveMsg = (newMsg) => {
@@ -57,7 +143,7 @@ export const ChatBoxContextProvider = ({children}) => {
           )
         )
       }else{
-        setMessage(prev => [...prev, {...newMsg, status:'sent'}])
+        setMessage(prev => [...prev, {...newMsg, status:'received'}])
         if (newMsg.group === currentGroup) {
           socket.emit('seen-message', currentGroup, newMsg.id);
         }
@@ -78,7 +164,7 @@ export const ChatBoxContextProvider = ({children}) => {
       socket.off('receive-message', handleReceiveMsg);
       socket.off('seen-message', handleSeenMsg);
     }
-  }, [currentGroup]);
+  }, [currentGroup, socket]);
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -94,22 +180,6 @@ export const ChatBoxContextProvider = ({children}) => {
   },[])
   const date = currentTime.toLocaleDateString([], {month:'short', day:'numeric', year:'numeric'})
   const day = currentTime.toLocaleDateString([], {weekday:'short'})
-
-  const handleMediaChange = (e) => {
-    const medias = Array.from(e.target.files || []);
-    const previewmedias = medias.map(file => URL.createObjectURL(file))
-    if (!medias) return;
-    setSelectedMedia(medias)
-    setPreviewMedia(previewmedias)
-  }
-
-  const handleFileChange = (e) => {
-    const files = Array.from(e.target.files || []);
-    if (!files.length) return;
-    const previewfiles = files.map(file => URL.createObjectURL(file))
-    setSelectedFile(prev => [...prev, ...files])
-    setPreviewFile(prev => [...prev, ...previewfiles])
-  }
 
   const sendMessage = (text) => {
     const customText = (text ?? input).trim()
@@ -152,7 +222,6 @@ export const ChatBoxContextProvider = ({children}) => {
     setLastOwnMsgId(newMsg.id)
     socket.emit('send-message', newMsg, currentGroup)
     socket.emit('stopTyping', currentGroup, socket.id);
-  
     //resetting state
     setInput('')
     setOptionVisible(false)
@@ -166,7 +235,7 @@ export const ChatBoxContextProvider = ({children}) => {
   const handleKey = (e) => {
     if(e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
-      if(input.trim() !== '' || previewMedia){
+      if(input.trim() !== '' || selectedMedia.length > 0 || selectedFile.length > 0) {
         sendMessage();
       }
     }
@@ -183,6 +252,23 @@ export const ChatBoxContextProvider = ({children}) => {
       }
     }    
   }
+
+  const handleMediaChange = (e) => {
+    const medias = Array.from(e.target.files || []);
+    const previewmedias = medias.map(file => URL.createObjectURL(file))
+    if (!medias.length) return;
+    setSelectedMedia(prev => [...prev, ...medias])
+    setPreviewMedia(prev => [...prev, ...previewmedias])
+  }
+
+  const handleFileChange = (e) => {
+    const files = Array.from(e.target.files || []);
+    if (!files.length) return;
+    const previewfiles = files.map(file => URL.createObjectURL(file))
+    setSelectedFile(prev => [...prev, ...files])
+    setPreviewFile(prev => [...prev, ...previewfiles])
+  }
+
   useEffect(() => {
     const handleTyping = (group, senderId) => {
       if (group === currentGroup && senderId !== socket.id) {
@@ -208,7 +294,7 @@ export const ChatBoxContextProvider = ({children}) => {
   }
 
   return (
-    <ChatBoxContext.Provider value = {{message, input, optionVisible, isActive, isTyping, showMenu, previewMedia, previewFile, selectedMedia, selectedFile, date, day, scrollRef, quickReplies, toggleMenu, handleMediaChange, handleFileChange, sendMessage, handleKey, handleInputChange, setPreviewMedia, setSelectedFile, setPreviewFile, setIsActive, isEmoji, setIsEmoji, onEmojiClick, socket, joinGroup, lastOwnMsgId}}>
+    <ChatBoxContext.Provider value = {{createGroup, message, input, optionVisible, isActive, isTyping, groupList, pendingRequest, isAdmin, showMenu, previewMedia, previewFile, selectedMedia, selectedFile, date, day, scrollRef, quickReplies, toggleMenu, handleMediaChange, handleFileChange, handleAcceptRequest, handleRejectRequest, sendMessage, handleKey, handleInputChange, setPreviewMedia, setSelectedFile, setPreviewFile, setIsActive, isEmoji, setIsEmoji, onEmojiClick, socket, joinGroup, lastOwnMsgId, setGroupList, setCurrentGroup, setUsername, username, currentGroup, notificationMsg}}>
         {children}
     </ChatBoxContext.Provider>
   )

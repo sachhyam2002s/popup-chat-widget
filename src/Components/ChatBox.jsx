@@ -13,6 +13,10 @@ function ChatBox(props) {
     date, 
     day,
     isTyping,
+    pendingRequest,
+    isAdmin,
+    handleAcceptRequest,
+    handleRejectRequest,
     quickReplies,
     showMenu,
     selectedMedia,
@@ -33,11 +37,12 @@ function ChatBox(props) {
     setIsEmoji,
     onEmojiClick,
     socket,
-    lastOwnMsgId
+    lastOwnMsgId,
+    notificationMsg,
   } = useChatBox();
   
   return (
-    <>
+    <div>
     <div className='fixed md:right-12 bottom-0 bg-gray-400 flex flex-col md:m-2 md:mx-5 shadow-lg h-[100svh] md:max-h-[450px] w-full md:max-w-[350px]  md:rounded-xl '>
       <div className='flex items-center p-2 gap-2'>
         <button onClick={props.onExit}>
@@ -63,6 +68,11 @@ function ChatBox(props) {
         <span className='text-xs text-center'>
           {date}, {day}
         </span>
+        {notificationMsg && (
+          <div className='bg-blue-100 text-blue-500 text-center rounded-md mx-2 py-1'>
+            {notificationMsg}
+          </div>
+        )}
         {message.filter(Boolean).map((msg, i) => {
           const showTime = i === 1 ||
           (i>1 &&
@@ -72,7 +82,7 @@ function ChatBox(props) {
           ) 
           
           return(
-            <div key={i}>
+            <>
               {showTime && msg.timeStamp && (
                 <div className={`text-xs text-gray-500 mx-5 text-center `}>
                   {new Date(msg.timeStamp).toLocaleTimeString([], {hour:'2-digit', minute: '2-digit'})}
@@ -125,7 +135,7 @@ function ChatBox(props) {
                   </div>
                 )}
               </div>
-                {msg.sender === socket.id && msg.id === lastOwnMsgId && (
+                {msg.sender === socket.id && (
                   <div className={`flex items-center gap-1 justify-end text-xs ${msg.status === 'seen' ? 'text-blue-500' : msg.status === 'delivered' ? 'text-gray-500' : 'text-red-500'} mx-1`}>
                     {msg.status === 'seen' && (
                       <>
@@ -146,7 +156,7 @@ function ChatBox(props) {
                     )}
                   </div>
                 )}
-            </div>
+            </>
           )
         })}
         
@@ -169,14 +179,24 @@ function ChatBox(props) {
         </div>
       )}
 
+      {isAdmin && pendingRequest.map(req => (
+        <div key={req.socketId} className='flex  flex-col mx-1 items-center justify-center rounded-3xl mt-1  text-white p-2 gap-1 '>
+          <span className='w-60'>{req.username} has requested to join the chat.</span>
+          <div className='flex items-center gap-2 '>
+            <button className='bg-blue-400 p-1 px-2 rounded-full cursor-pointer' onClick={() => handleAcceptRequest(req.socketId)}>Accept</button>
+            <button className='bg-red-400 p-1 px-2 rounded-full cursor-pointer' onClick={() => handleRejectRequest(req.socketId)}>Cancel</button>
+          </div>
+        </div>
+      ))}
+
       {Array.isArray(previewMedia) && previewMedia.length > 0 && (
         <div className='flex flex-wrap mx-1 bg-white'>
           {previewMedia.map((media, idx) => (
             <div key={idx} className='relative w-20 h-15 m-1'>
               {selectedMedia[idx] && selectedMedia[idx].type.startsWith('image/') ? (
-                <img src={media} alt="preview" className='w-full h-full object-cover rounded'/>
+                <img src={media} alt="image preview" className='w-full h-full object-cover rounded'/>
               ):(
-                <video src={media} alt='preview' className='w-full h-full object-cover rounded'></video>
+                <video src={media} alt='video preview' className='w-full h-full object-cover rounded'></video>
               )}
               <button className='absolute right-0 top-0' 
                 onClick={() => {
@@ -213,11 +233,10 @@ function ChatBox(props) {
       )}
 
       {isEmoji && (
-        <div className='absolute left-4 md:left-2 bottom-15 md:bottom-12 bg-gray-200 p-1 rounded-lg shadow-inner '>
+        <div className='absolute left-2 bottom-14 md:bottom-12 bg-gray-200 p-1 rounded-lg shadow-inner '>
           <EmojiPicker onEmojiClick={onEmojiClick} className='md:max-w-[250px] h-[50vh] md:max-h-[40vh]'/>
         </div>
       )}
-      
 
       <div className='flex gap-1 m-1'>
           <div className='rounded-lg bg-white w-full overflow-hidden flex p-1'>
@@ -248,7 +267,7 @@ function ChatBox(props) {
           </div>
         </div>
       </div>
-    </>
+    </div>
   )
 }
 
