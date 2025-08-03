@@ -1,6 +1,7 @@
-import {SendHorizonal, User, CirclePlus, FilePlus, Image, ArrowLeft, X, File, Smile, CircleX, CheckCheck} from 'lucide-react'
+import {SendHorizonal, User, CirclePlus, FilePlus, Image, ArrowLeft, X, File, Smile, CircleX, CheckCheck, Check, Info} from 'lucide-react'
 import {useChatBox} from '../Contexts/ChatBoxContext'
 import EmojiPicker from 'emoji-picker-react'
+import ChatInfo from './ChatInfo';
 
 function ChatBox(props) {
   const {
@@ -37,9 +38,14 @@ function ChatBox(props) {
     setIsEmoji,
     onEmojiClick,
     socket,
-    lastOwnMsgId,
     notificationMsg,
+    currentGroup,
+    username,
+    isInfo,
+    setIsInfo
   } = useChatBox();
+
+  const chatHeaderName = currentGroup || username || props.user
   
   return (
     <div>
@@ -55,9 +61,16 @@ function ChatBox(props) {
           <button onClick={() => setIsActive(active => !active)} className={`absolute right-0 bottom-0 w-4 md:w-3 h-4 md:h-3 rounded-full ${isActive ? 'bg-green-500' : 'bg-gray-400'} border-2 border-white`}/>
         </div>
         <h1 className='text-2xl md:text-lg font-bold w-full '>
-          {props.group || props.username || props.user}
+          {chatHeaderName}
         </h1>
-        <div  className='flex gap-2 pr-1 items-center'>
+        <div  className='flex gap-2 pr-1 '>
+          {isInfo ? (
+            <ChatInfo onExit={() => setIsInfo(false)} onClose={props.onClose}/>
+          ):(
+            <button onClick={() => setIsInfo(true)}>
+              <Info className='w-5 h-5' />
+            </button>
+          )}
           <button onClick={props.onClose} className='cursor-pointer'>
             <X className='w-6 h-6'/>
           </button>
@@ -82,7 +95,7 @@ function ChatBox(props) {
           ) 
           
           return(
-            <>
+            <div key={msg.id || i}>
               {showTime && msg.timeStamp && (
                 <div className={`text-xs text-gray-500 mx-5 text-center `}>
                   {new Date(msg.timeStamp).toLocaleTimeString([], {hour:'2-digit', minute: '2-digit'})}
@@ -103,14 +116,14 @@ function ChatBox(props) {
                   </div>
                 )}
                 <div>
-                  {Array.isArray(msg.media) && (
+                  {Array.isArray(msg.media) && msg.media.length > 0 && (
                     <div className={`flex flex-col mx-1 ${msg.sender === socket.id ? 'items-end' : 'items-start'}`}>
                       <span className='ml-1 text-xs text-gray-500'>{msg.sender !== socket.id ? msg.senderName : '' }</span>
                       {msg.media.map((media, idx) => 
                         media.type === 'image' ? (
                           <img key={idx} src={media.url} alt="image" className={`max-w-90 md:max-w-60 max-h-90 rounded-lg mb-1 ${msg.sender === socket.id ? 'items-end' : 'items-start'}`}/>
                         ) : (
-                          <video key={idx} src={media.url} alt='video' className='max-w-90 md:max-w-60 max-h-90 rounded-lg mb-1'/>
+                          <video key={idx} src={media.url} alt='video' className='max-w-90 md:max-w-60 max-h-90 rounded-lg mb-1' controls/>
                         )
                       )}
                     </div>
@@ -136,10 +149,11 @@ function ChatBox(props) {
                 )}
               </div>
                 {msg.sender === socket.id && (
-                  <div className={`flex items-center gap-1 justify-end text-xs ${msg.status === 'seen' ? 'text-blue-500' : msg.status === 'delivered' ? 'text-gray-500' : 'text-red-500'} mx-1`}>
+                  <div className={`flex items-center gap-1 justify-end text-xs ${msg.status === 'sent' ? 'text-gray-500' : msg.status === 'seen' ? 'text-blue-600' : msg.status === 'delivered' ? 'text-gray-500' : 'text-red-500'} mx-1`}>
                     {msg.status === 'seen' && (
                       <>
                         <p>Seen</p>
+                        <CheckCheck className='w-4 h-4'/>
                       </>
                     )} 
                     {msg.status === 'delivered' && (
@@ -148,7 +162,13 @@ function ChatBox(props) {
                         <CheckCheck className='w-4 h-4'/>
                       </>
                     )}
-                    {!msg.status && (
+                    {msg.status === 'sent' && (
+                      <>
+                        <p>Sent</p>
+                        <Check className='w-4 h-4'/>
+                      </>
+                    )}
+                    {msg.status === 'failed' && (
                       <>
                         <CircleX className='w-4 h-4'/>
                         <p>Message not sent.</p>
@@ -156,7 +176,7 @@ function ChatBox(props) {
                     )}
                   </div>
                 )}
-            </>
+            </div>
           )
         })}
         
