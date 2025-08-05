@@ -138,7 +138,7 @@ export const ChatBoxContextProvider = ({children}) => {
       setNotificationMsg(`You have already sent a request to join ${groupName}.`);
       setTimeout(() => setNotificationMsg(''), 3000);
     }
-    const handleGroupCreated = (groupName, adminName) => {
+    const handleGroupCreated = ({groupName, adminName}) => {
       setNotificationMsg(`Group "${groupName}" created successfully.`);
       setTimeout(() => setNotificationMsg(''), 3000);
       setGroupList(prev => {
