@@ -40,7 +40,7 @@ function ChatList(props) {
   const handleJoinGroup = () => {
     if (username && group) {
       joinGroup(group, username)
-      setNotificationMsg(`Request sent to join group ${group}. Wait for admin approval.`)
+      setNotificationMsg(`Request sent to join group "${group}". Wait for admin approval.`)
       setTimeout(() => setNotificationMsg(''), 3000)
       setIsWaitingForApproval(true)
       setGroup('')
@@ -58,9 +58,8 @@ function ChatList(props) {
       })
       setJoinedGroup(groupName)
       setJoinedUsername(username)
-      setIsChatBoxOpen(true)
       setIsWaitingForApproval(false)
-      setNotificationMsg(`You request to join the group: ${groupName} is approved.`)
+      setNotificationMsg(`You request to join the group: "${groupName}" is approved.`)
       setTimeout(() => setNotificationMsg(''), 3000)
     }
     const handleGroupExists = (groupName) => {
@@ -75,27 +74,27 @@ function ChatList(props) {
       setNotificationMsg(`You have already sent a request to join  "${groupName}".`);
       setTimeout(() => setNotificationMsg(''), 3000);
     }
-    const handleGroupDeleted = (groupName, adminName) => {
-      setNotificationMsg(`Group "${groupName}" (admin: ${adminName}) has been deleted.`);
-      setTimeout(() => setNotificationMsg(''), 3000);
-      setGroupList(prev => prev.filter(group => group.name  !== groupName))
-      if (joinedGroup === groupName){
-        setIsChatBoxOpen(false)
-        setJoinedGroup('')
-        setJoinedUsername('')
-      }
-    }
+    // const handleGroupDeleted = (groupName, adminName) => {
+    //   setNotificationMsg(`Group "${groupName}" (admin: ${adminName}) has been deleted.`);
+    //   setTimeout(() => setNotificationMsg(''), 3000);
+    //   setGroupList(prev => prev.filter(group => group.name  !== groupName))
+    //   if (joinedGroup === groupName){
+    //     setIsChatBoxOpen(false)
+    //     setJoinedGroup('')
+    //     setJoinedUsername('')
+    //   }
+    // }
     socket.on('request-accepted', handleRequestAccepted);
     socket.on('group-exists', handleGroupExists);
     socket.on('group-not-found', handleGroupNotFound);
     socket.on('join-request-already-sent', handleJoinRequestAlreadySent);
-    socket.on('group-deleted', handleGroupDeleted);
+    // socket.on('group-deleted', handleGroupDeleted);
     return () => {
       socket.off('request-accepted', handleRequestAccepted);
       socket.off('group-exists', handleGroupExists);
       socket.off('group-not-found', handleGroupNotFound);
       socket.off('join-request-already-sent', handleJoinRequestAlreadySent);
-      socket.off('group-deleted', handleGroupDeleted);
+      // socket.off('group-deleted', handleGroupDeleted);
     }
   },[socket, setGroupList, joinedGroup, username])
 

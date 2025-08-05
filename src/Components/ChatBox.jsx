@@ -65,7 +65,7 @@ function ChatBox(props) {
         </h1>
         <div  className='flex gap-2 pr-1 '>
           {isInfo ? (
-            <ChatInfo onExit={() => setIsInfo(false)} onClose={props.onClose}/>
+            <ChatInfo onExit={() => setIsInfo(false)} onClose={props.onClose} groupName={chatHeaderName}/>
           ):(
             <button onClick={() => setIsInfo(true)}>
               <Info className='w-5 h-5' />
