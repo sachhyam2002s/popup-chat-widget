@@ -30,7 +30,7 @@ function ChatList(props) {
       createGroup(group, username)
       setJoinedGroup(group)
       setJoinedUsername(username)
-      setIsChatBoxOpen(true)
+      // setIsChatBoxOpen(true)
       setGroup('')
       setUsername('')
       setIsWaitingForApproval(false)
@@ -74,27 +74,27 @@ function ChatList(props) {
       setNotificationMsg(`You have already sent a request to join  "${groupName}".`);
       setTimeout(() => setNotificationMsg(''), 3000);
     }
-    // const handleGroupDeleted = (groupName, adminName) => {
-    //   setNotificationMsg(`Group "${groupName}" (admin: ${adminName}) has been deleted.`);
-    //   setTimeout(() => setNotificationMsg(''), 3000);
-    //   setGroupList(prev => prev.filter(group => group.name  !== groupName))
-    //   if (joinedGroup === groupName){
-    //     setIsChatBoxOpen(false)
-    //     setJoinedGroup('')
-    //     setJoinedUsername('')
-    //   }
-    // }
+    const handleGroupDeleted = (groupName, adminName) => {
+      setNotificationMsg(`Group "${groupName}" (admin: ${adminName}) has been deleted.`);
+      setTimeout(() => setNotificationMsg(''), 3000);
+      setGroupList(prev => prev.filter(group => group.name  !== groupName))
+      if (joinedGroup === groupName){
+        setIsChatBoxOpen(false)
+        setJoinedGroup('')
+        setJoinedUsername('')
+      }
+    }
     socket.on('request-accepted', handleRequestAccepted);
     socket.on('group-exists', handleGroupExists);
     socket.on('group-not-found', handleGroupNotFound);
     socket.on('join-request-already-sent', handleJoinRequestAlreadySent);
-    // socket.on('group-deleted', handleGroupDeleted);
+    socket.on('group-deleted', handleGroupDeleted);
     return () => {
       socket.off('request-accepted', handleRequestAccepted);
       socket.off('group-exists', handleGroupExists);
       socket.off('group-not-found', handleGroupNotFound);
       socket.off('join-request-already-sent', handleJoinRequestAlreadySent);
-      // socket.off('group-deleted', handleGroupDeleted);
+      socket.off('group-deleted', handleGroupDeleted);
     }
   },[socket, setGroupList, joinedGroup, username])
 
@@ -196,11 +196,17 @@ function ChatList(props) {
             )}
           </div>
           <div ref={scrollRef} className='flex flex-col m-2 gap-1 overflow-y-scroll scrollbar-hide'>
-            {searchedUser.map((name, id) => (
+            {/* {searchedUser.map((name, id) => (
               <User key={id} onClick={() => {setIsChatBoxOpen(true); setSelectedUser(name)}} user={name}/>
-            ))}
+            ))} */}
             {Array.isArray(groupList) && groupList.map((groupItem, id) => (
-              <Group key={id} onClick={() => {setJoinedGroup(groupItem.name); setJoinedUsername(groupItem.admin); setIsChatBoxOpen(true); setCurrentGroup(groupItem.name); setContextUsername(username);}} group={groupItem.name} admin={groupItem.admin}/>
+              <Group key={id} onClick={() => {
+                setJoinedGroup(groupItem.name);
+                setJoinedUsername(groupItem.admin); 
+                setIsChatBoxOpen(true);
+                setCurrentGroup(groupItem.name);
+                setContextUsername(username); 
+              }} group={groupItem.name} admin={groupItem.admin}/>
             ))}
           </div>
         </>
