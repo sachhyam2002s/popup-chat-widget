@@ -30,7 +30,7 @@ function ChatList(props) {
       createGroup(group, username)
       setJoinedGroup(group)
       setJoinedUsername(username)
-      setIsChatBoxOpen(true)
+      // setIsChatBoxOpen(true)
       setGroup('')
       setUsername('')
       setIsWaitingForApproval(false)
@@ -40,7 +40,7 @@ function ChatList(props) {
   const handleJoinGroup = () => {
     if (username && group) {
       joinGroup(group, username)
-      setNotificationMsg(`Request sent to join group ${group}. Wait for admin approval.`)
+      setNotificationMsg(`Request sent to join group "${group}". Wait for admin approval.`)
       setTimeout(() => setNotificationMsg(''), 3000)
       setIsWaitingForApproval(true)
       setGroup('')
@@ -58,9 +58,8 @@ function ChatList(props) {
       })
       setJoinedGroup(groupName)
       setJoinedUsername(username)
-      setIsChatBoxOpen(true)
       setIsWaitingForApproval(false)
-      setNotificationMsg(`You request to join the group: ${groupName} is approved.`)
+      setNotificationMsg(`You request to join the group: "${groupName}" is approved.`)
       setTimeout(() => setNotificationMsg(''), 3000)
     }
     const handleGroupExists = (groupName) => {
@@ -197,11 +196,17 @@ function ChatList(props) {
             )}
           </div>
           <div ref={scrollRef} className='flex flex-col m-2 gap-1 overflow-y-scroll scrollbar-hide'>
-            {searchedUser.map((name, id) => (
+            {/* {searchedUser.map((name, id) => (
               <User key={id} onClick={() => {setIsChatBoxOpen(true); setSelectedUser(name)}} user={name}/>
-            ))}
+            ))} */}
             {Array.isArray(groupList) && groupList.map((groupItem, id) => (
-              <Group key={id} onClick={() => {setJoinedGroup(groupItem.name); setJoinedUsername(groupItem.admin); setIsChatBoxOpen(true); setCurrentGroup(groupItem.name); setContextUsername(username);}} group={groupItem.name} admin={groupItem.admin}/>
+              <Group key={id} onClick={() => {
+                setJoinedGroup(groupItem.name);
+                setJoinedUsername(groupItem.admin); 
+                setIsChatBoxOpen(true);
+                setCurrentGroup(groupItem.name);
+                setContextUsername(username); 
+              }} group={groupItem.name} admin={groupItem.admin}/>
             ))}
           </div>
         </>

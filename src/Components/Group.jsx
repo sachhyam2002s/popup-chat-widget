@@ -1,8 +1,11 @@
 import {useState} from 'react'
 import {User2} from 'lucide-react'
+import {useChatBox} from '../Contexts/ChatBoxContext'
+
 
 function Group(props) {
-    const [isActive, setIsActive] = useState(true)
+  // const { isActive, setIsActive } = useChatBox()
+    const [isActive, setIsActive] = useState(false)
     const [msgCount, setMsgCount] = useState(0)
     const [isUnseenMsg, setIsUnseenMsg] = useState(false) 
 

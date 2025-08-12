@@ -65,10 +65,10 @@ function ChatBox(props) {
         </h1>
         <div  className='flex gap-2 pr-1 '>
           {isInfo ? (
-            <ChatInfo onExit={() => setIsInfo(false)} onClose={props.onClose}/>
+            <ChatInfo onExit={() => setIsInfo(false)} onClose={props.onClose} groupName={chatHeaderName}/>
           ):(
             <button onClick={() => setIsInfo(true)}>
-              <Info className='w-5 h-5' />
+              <Info className='w-5 h-5 cursor-pointer' />
             </button>
           )}
           <button onClick={props.onClose} className='cursor-pointer'>
@@ -109,7 +109,7 @@ function ChatBox(props) {
                 )}
                 {msg.text && (
                   <div className='flex flex-col items-start max-w-[80%]'>
-                    <span className='ml-1 text-xs text-gray-500'>{msg.sender !== socket.id ? msg.senderName : '' }</span>
+                    <span className='ml-1 text-xs text-gray-500'>{msg.sender === socket.id ? msg.senderName : '' }</span>
                     <div className={`mx-1 rounded-2xl px-2 py-1 text-lg md:text-sm  break-all whitespace-pre-wrap ${msg.sender === socket.id ? 'bg-blue-300' : 'bg-gray-300'}`}>
                       {msg.text}
                     </div>
@@ -203,7 +203,7 @@ function ChatBox(props) {
         <div key={req.socketId} className='flex  flex-col mx-1 items-center justify-center rounded-3xl mt-1  text-white p-2 gap-1 '>
           <span className='w-60'>{req.username} has requested to join the chat.</span>
           <div className='flex items-center gap-2 '>
-            <button className='bg-blue-400 p-1 px-2 rounded-full cursor-pointer' onClick={() => handleAcceptRequest(req.socketId)}>Accept</button>
+            <button className='bg-blue-400 p-1 px-2 rounded-full cursor-pointer' onClick={() => handleAcceptRequest(req.socketId, req.username)}>Accept</button>
             <button className='bg-red-400 p-1 px-2 rounded-full cursor-pointer' onClick={() => handleRejectRequest(req.socketId)}>Cancel</button>
           </div>
         </div>

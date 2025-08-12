@@ -1,4 +1,4 @@
-import {useState, useEffect, useRef, createContext, useContext} from 'react'
+import {useState, useEffect, useRef, createContext, useContext, useMemo} from 'react'
 import replies from  '../quickReplies.json'
 import socket from '../socket'
 
@@ -8,26 +8,31 @@ export const ChatBoxContextProvider = ({children}) => {
   const [message, setMessage] = useState([])
   const [input, setInput] = useState('')
   const [groupList, setGroupList] = useState([])
-  const [optionVisible, setOptionVisible] = useState(true)
-  const [isActive, setIsActive] = useState(true)
-  const [isTyping, setIsTyping] = useState(false)
+  const [groupMembers, setGroupMembers] = useState([])
   const [pendingRequest, setPendingRequest] = useState([])
+  const [currentGroup, setCurrentGroup] = useState('')
+  const [username, setUsername] = useState('')
   const [isAdmin, setIsAdmin] = useState(false)
+  const [isTyping, setIsTyping] = useState(false)
+  const [isActive, setIsActive] = useState(true)
   const [showMenu, setShowMenu] = useState(false)
+  const [isEmoji, setIsEmoji] = useState(false)
+  const [notificationMsg, setNotificationMsg] = useState('')
   const [currentTime, setCurrentTime] = useState(new Date())
   const [previewMedia, setPreviewMedia] = useState([])
   const [selectedMedia, setSelectedMedia] = useState([])
-  const [selectedFile, setSelectedFile] = useState([])
   const [previewFile, setPreviewFile] = useState([])
+  const [selectedFile, setSelectedFile] = useState([])
   const [lastOwnMsgId, setLastOwnMsgId] = useState(null)
-  const [isEmoji, setIsEmoji] = useState(false)
-  const [currentGroup, setCurrentGroup] = useState('')
-  const [username, setUsername] = useState('')
-  const [notificationMsg, setNotificationMsg] = useState('')
+  const [optionVisible, setOptionVisible] = useState(true)
   const [isInfo, setIsInfo] = useState(false)
   
   const scrollRef = useRef(null)
   const quickReplies = replies.client  
+
+  const date = currentTime.toLocaleDateString([], {month:'short', day:'numeric', year:'numeric'})
+  const day = currentTime.toLocaleDateString([], {weekday:'short'})
+  const adminName = useMemo(() => groupList.find(g => g.name === currentGroup)?.admin, [groupList, currentGroup])
   
   useEffect(() => {
     if (!socket.connected) {
@@ -36,7 +41,7 @@ export const ChatBoxContextProvider = ({children}) => {
     socket.on('connect', () => {
       console.log(`Connected with id: ${socket.id}`)
     })
-    socket.on('connect_error', () => {
+    socket.on('connect_error', (err) => {
       console.error(`Connection error:`, err)
     })
     socket.on('disconnect', () => {
@@ -54,24 +59,27 @@ export const ChatBoxContextProvider = ({children}) => {
     setCurrentGroup(groupName)
     setUsername(adminName)
     setIsAdmin(true)
-    setMessage([
-      {text: 'Hello! Welcome.', sender:'vendor'},
-      {text: 'How can I help you?', sender:'vendor'}
-    ])
+    welcomeMessage()
   }
   const joinGroup = (groupName, username) => {
     socket.emit('join-group', groupName, username)
     setCurrentGroup(groupName)
+    console.log(username)
     setUsername(username)
     setIsAdmin(false)
+    welcomeMessage()
+  }
+
+  const welcomeMessage = () => {
     setMessage([
       {text: 'Hello! Welcome.', sender:'vendor'},
       {text: 'How can I help you?', sender:'vendor'}
     ])
   }
 
-  const handleAcceptRequest = (socketId) => {
+  const handleAcceptRequest = (socketId, username) => {    
     socket.emit('accept-request', currentGroup, socketId);
+    setGroupMembers(prev => [...prev, username])
     setPendingRequest(prev => prev.filter(req => req.socketId !== socketId));
   }
   const handleRejectRequest = (socketId) => {
@@ -81,33 +89,40 @@ export const ChatBoxContextProvider = ({children}) => {
 
   useEffect(() => {
     socket.on('join-request', ({ socketId, username, groupName }) => {
-      if (isAdmin && currentGroup === groupName) {
-        if (!pendingRequest.some(req => req.socketId === socketId)) {
-          setPendingRequest(prev => [...prev, { socketId, username }]);
-        }
+      if (isAdmin && groupName === currentGroup) {
+        setPendingRequest(prev => {
+          if (!prev.some(req => req.socketId === socketId)) {
+            return [...prev, { socketId, username }]
+          }
+          return prev
+        })
       }
     });
     return () => {
       socket.off('join-request')
     }
-  }, [isAdmin, currentGroup, pendingRequest])
+  }, [isAdmin, currentGroup])
 
   useEffect(() => {
-    socket.on('group-updated', ({ groupName, members, adminName }) => {
+    socket.on('group-updated', ({ groupName, members, admin, adminName }) => {
       setGroupList(prev => {
-        const groupExist = prev.some(group => group.name === groupName);
+        const groupExist = prev.some(g => g.name === groupName);
         if(!groupExist) {
           return [...prev, {name: groupName, admin: adminName}];
         }
-        return prev.map(group => 
-          group.name === groupName ? {...group, members, admin: adminName} : group
+        return prev.map(g => 
+          g.name === groupName ? {...g, members, admin: adminName} : g
         );
       })
+      if (groupName === currentGroup) {
+        setGroupMembers(members)
+        setIsAdmin(admin === socket.id)
+      }
     })
     return () => {
       socket.off('group-updated')
     }
-  }, [])
+  }, [currentGroup])
 
   useEffect(() => {
     const handleRequestAccepted = ({groupName, adminName}) => {
@@ -138,7 +153,7 @@ export const ChatBoxContextProvider = ({children}) => {
       setNotificationMsg(`You have already sent a request to join ${groupName}.`);
       setTimeout(() => setNotificationMsg(''), 3000);
     }
-    const handleGroupCreated = (groupName, adminName) => {
+    const handleGroupCreated = ({groupName, adminName}) => {
       setNotificationMsg(`Group "${groupName}" created successfully.`);
       setTimeout(() => setNotificationMsg(''), 3000);
       setGroupList(prev => {
@@ -165,15 +180,15 @@ export const ChatBoxContextProvider = ({children}) => {
     socket.on('group-created', handleGroupCreated); 
     socket.on('group-deleted', handleGroupDeleted);
     return () => {
-      socket.off('request-accepted', handleRequestAccepted); 
-      socket.off('request-rejected', handleRequestRejected);
-      socket.off('group-exists', handleGroupExists);
-      socket.off('group-not-found', handleGroupNotFound);
-      socket.off('join-request-already-sent', handleJoinRequestAlreadySent);
-      socket.off('group-created', handleGroupCreated);
-      socket.off('group-deleted', handleGroupDeleted);
+      socket.off('request-accepted'); 
+      socket.off('request-rejected');
+      socket.off('group-exists');
+      socket.off('group-not-found');
+      socket.off('join-request-already-sent');
+      socket.off('group-created');
+      socket.off('group-deleted');
     }
-  },[socket, username, currentGroup])
+  },[currentGroup])
 
   useEffect(() => {
     const handleReceiveMsg = (newMsg) => {
@@ -202,10 +217,10 @@ export const ChatBoxContextProvider = ({children}) => {
     socket.on('receive-message', handleReceiveMsg);
     socket.on('seen-message', handleSeenMsg);
     return () =>{
-      socket.off('receive-message', handleReceiveMsg);
-      socket.off('seen-message', handleSeenMsg);
+      socket.off('receive-message');
+      socket.off('seen-message');
     }
-  }, [currentGroup, socket]);
+  }, [currentGroup]);
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -219,8 +234,6 @@ export const ChatBoxContextProvider = ({children}) => {
     }, 60000)
     return () => clearInterval(interval)
   },[])
-  const date = currentTime.toLocaleDateString([], {month:'short', day:'numeric', year:'numeric'})
-  const day = currentTime.toLocaleDateString([], {weekday:'short'})
 
   const sendMessage = (text) => {
     const customText = (text ?? input).trim()
@@ -229,7 +242,8 @@ export const ChatBoxContextProvider = ({children}) => {
     const isFile = selectedFile.length > 0;
     if (!isText && !isMedia && !isFile) return;
     if(!currentGroup){
-      alert('Please join a group first');
+      setNotificationMsg('Please join a group first.')
+      setTimeout(() => setNotificationMsg(''), 3000)
       return; 
     }
     const newMsg = {
@@ -336,7 +350,7 @@ export const ChatBoxContextProvider = ({children}) => {
 
 
   return (
-    <ChatBoxContext.Provider value = {{createGroup, message, input, optionVisible, isActive, isTyping, groupList, pendingRequest, isAdmin, showMenu, previewMedia, previewFile, selectedMedia, selectedFile, date, day, scrollRef, quickReplies, toggleMenu, handleMediaChange, handleFileChange, handleAcceptRequest, handleRejectRequest, sendMessage, handleKey, handleInputChange, setPreviewMedia, setSelectedFile, setPreviewFile, setIsActive, isEmoji, setIsEmoji, onEmojiClick, socket, joinGroup, lastOwnMsgId, setGroupList, setCurrentGroup, setUsername, username, currentGroup, notificationMsg, isInfo, setIsInfo}}>
+    <ChatBoxContext.Provider value = {{createGroup, message, input, optionVisible, isActive, isTyping, groupList, pendingRequest, isAdmin, showMenu, previewMedia, previewFile, selectedMedia, selectedFile, date, day, scrollRef, quickReplies, toggleMenu, handleMediaChange, handleFileChange, handleAcceptRequest, handleRejectRequest, sendMessage, handleKey, handleInputChange, setPreviewMedia, setSelectedFile, setPreviewFile, setIsActive, isEmoji, setIsEmoji, onEmojiClick, socket, joinGroup, lastOwnMsgId, setGroupList, setCurrentGroup, setUsername, username, currentGroup, notificationMsg, isInfo, setIsInfo, groupMembers, adminName}}>
         {children}
     </ChatBoxContext.Provider>
   )
