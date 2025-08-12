@@ -1,0 +1,14 @@
+{
+    "client": [
+        "What products are available?",
+        "Could you provide me the price lists?",
+        "How long does it take for the products to be delivered?"
+    ],
+    "vender": [
+        "What is the status of my order?",
+        "Can you help me with a product issue?",
+        "I need to change  my shipping address."
+    ]
+}
+
+
