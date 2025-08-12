@@ -1,0 +1,47 @@
+[
+    {
+        "id": "start",
+        "sender": "bot",
+        "message": "Hello! How can I assist you today?",
+        "options": [
+            {"text": "Talk to support.", "next": "support"},
+            {"text": "What products are available?", "next": "product"},
+            {"text": "How long does it take for the product to be delivered?", "next": "deliver"}
+        ]
+    },
+    {
+        "id": "product",
+        "sender": "bot",
+        "message": "For products please browse our website.",
+        "options": [
+            {"text": "Will check later.", "next": "end"},
+            {"text": "Provide me the link.", "next": "website"},
+            {"text": "I would like to chat with support.", "next": "support"}
+        ]
+    },
+    {
+        "id": "deliver",
+        "sender": "bot",
+        "message": "The delivery time depends on the product and your location.",
+        "options": [
+            {"text": "Ok, Thanks.", "next": "end"},
+            {"text": "I would like to chat with support.", "next": "support"}
+        ]
+    },
+    {
+        "id": "support",
+        "sender": "bot",
+        "message": "Support will contact you when they are online. Please wait.",
+        "options": [
+            {"text": "Back to main menu.", "next": "start"},
+            {"text": "Notify me when available.", "next": "end"},
+            {"text": "End chat.", "next": "end"}
+        ]
+    },
+    {
+        "id": "end",
+        "sender": "bot",
+        "message": "Thanks for chatting."
+    }
+
+]
