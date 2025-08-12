@@ -1,0 +1,24 @@
+version: '3.8'
+
+services:
+  frontend:
+    build:
+      context: ./chat-app
+    ports:
+      - "5173:5173"
+    volumes:
+      - ./chat-app:/src
+      - /src/node_modules
+    command: pnpm dev --host 0.0.0.0
+    depends_on:
+      - backend
+
+  backend:
+    build:
+      context: ./server
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./server:/server
+      - /server/node_modules
+    command: node server.js
